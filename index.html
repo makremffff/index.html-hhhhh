@@ -612,6 +612,7 @@ You will earn 5% of the revenue from every referral you bring through ads!
         let referralsCount = 0; 
         let isBanned = false; 
         
+        // Sectors are still needed for drawing the wheel segments and for prize calculation 
         const sectors = [5, 10, 15, 20, 5]; 
 
         function updateState(data) {
@@ -850,25 +851,7 @@ You will earn 5% of the revenue from every referral you bring through ads!
                 ctx.closePath();
                 ctx.stroke();
 
-                // Draw Prize Value
-                ctx.save();
-                ctx.translate(centerX, centerY);
-                
-                const textAngle = i * arc + arc / 2;
-                
-                ctx.rotate(textAngle); 
-
-                ctx.textAlign = 'center';
-                ctx.fillStyle = '#fff'; 
-                // 🛠️ FIX: Use a clear, large font for the prize value (Orbitron)
-                ctx.font = 'bold 28px Orbitron, sans-serif'; 
-                ctx.shadowColor = '#000';
-                ctx.shadowBlur = 4;
-                
-                // Draw prize value text
-                ctx.fillText(prizeValues[i], radius / 1.5, 0); 
-                
-                ctx.restore();
+                // 🛠️ تم حذف الكود الذي يرسم النصوص داخل العجلة لتكون فارغة تماماً
             });
 
             // Draw Center Circle
@@ -901,7 +884,7 @@ You will earn 5% of the revenue from every referral you bring through ads!
                 return;
             }
             
-            // 1. Request Action ID from the Server
+            // 1. Request Action ID from the Server ⬅️ تم التفعيل على Spin
             const spinActionId = await requestActionId('spin');
             if (!spinActionId) return; // Error message already shown by fetchApi
 
@@ -1047,7 +1030,7 @@ You will earn 5% of the revenue from every referral you bring through ads!
             if(isNaN(amount) || amount < 400){ Telegram.WebApp.showAlert('⚠️ INVALID AMOUNT ⚠️\n\n[STATUS] The minimum withdrawal amount is 400 SHIB.'); return; }
             if(amount > shibBalance){ Telegram.WebApp.showAlert(`❌ BALANCE ERROR ❌\n\n[STATUS] Insufficient balance. Your current balance is ${shibBalance.toLocaleString()} SHIB.`); return; }
             
-            // 1. Request Action ID from the Server
+            // 1. Request Action ID from the Server ⬅️ تم التفعيل على Withdraw
             const actionId = await requestActionId('withdraw');
             if (!actionId) return;
 
@@ -1056,7 +1039,7 @@ You will earn 5% of the revenue from every referral you bring through ads!
                 type: 'withdraw',
                 binanceId: binanceId,
                 amount: amount,
-                action_id: actionId // ⬅️ Send Server-Issued ID
+                action_id: actionId // ⬅️ إرسال Action ID
             });
 
             if (result.ok) {
