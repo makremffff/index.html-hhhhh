@@ -1,10 +1,11 @@
-// /api/index.js (Final and Corrected Version - Unchanged from previous step)
+// /api/index.js (Final and Corrected Version)
 
 /**
  * SHIB Ads WebApp Backend API
  * Handles all POST requests from the Telegram Mini App frontend.
  * Uses the Supabase REST API for persistence.
  */
+// 🟢 تحسين: استخدام مكتبة crypto لـ randomInt
 const crypto = require('crypto');
 
 // Load environment variables for Supabase connection
@@ -21,14 +22,17 @@ const REFERRAL_COMMISSION_RATE = 0.05;
 const DAILY_MAX_ADS = 100; // Max ads limit
 const DAILY_MAX_SPINS = 15; // Max spins limit
 const MIN_TIME_BETWEEN_ACTIONS_MS = 3000; // 3 seconds minimum time between watchAd/spin requests
+const MIN_WITHDRAW = 400; // 🟢 FIX: تعريف حد السحب الأدنى في الواجهة الخلفية
 // Sectors: 5 (Index 0), 10 (Index 1), 15 (Index 2), 20 (Index 3), 5 (Index 4)
 const SPIN_SECTORS = [5, 10, 15, 20, 5];
 
 /**
  * Helper function to randomly select a prize from the defined sectors and return its index.
+ * 🟢 تحسين: استخدام crypto.randomInt بدلاً من Math.random لأمان أفضل.
  */
 function calculateRandomSpinPrize() {
-    const randomIndex = Math.floor(Math.random() * SPIN_SECTORS.length);
+    // Math.random() * SPIN_SECTORS.length => crypto.randomInt(SPIN_SECTORS.length)
+    const randomIndex = crypto.randomInt(SPIN_SECTORS.length); 
     const prize = SPIN_SECTORS[randomIndex];
     return { prize, prizeIndex: randomIndex };
 }
@@ -71,7 +75,8 @@ async function supabaseFetch(tableName, method, body = null, queryParams = '?sel
       const responseText = await response.text();
       try {
           const jsonResponse = JSON.parse(responseText);
-          return Array.isArray(jsonResponse) ? jsonResponse : { success: true };
+          // 🟢 تحسين: التأكد من التعامل مع الاستجابات الفارغة لعمليات الـ PATCH/POST التي قد لا تعيد مصفوفة
+          return jsonResponse.hasOwnProperty('success') ? jsonResponse : Array.isArray(jsonResponse) ? jsonResponse : { success: true };
       } catch (e) {
           return { success: true };
       }
@@ -120,6 +125,7 @@ async function resetDailyLimitsIfExpired(userId) {
 
             if (Object.keys(updatePayload).length > 0) {
                 console.log(`Resetting limits for user ${userId}.`);
+                // 🟢 تحسين: عدم تحديث last_activity هنا. يُحدّث فقط عند عمل (watchAd/spin) للحفاظ على نافذة الـ 24 ساعة سليمة.
                 await supabaseFetch('users', 'PATCH',
                     updatePayload,
                     `?id=eq.${userId}`);
@@ -156,7 +162,8 @@ async function checkRateLimit(userId) {
                 remainingTime: remainingTime
             };
         }
-
+        
+        // 🟢 تحسين: عند اجتياز اختبار الـ rate limit، يتم تمرير الدالة لتحديث last_activity في الـ handler
         return { ok: true };
     } catch (error) {
         console.error(`Rate limit check failed for user ${userId}:`, error.message);
@@ -193,7 +200,7 @@ function validateInitData(initData) {
         .digest('hex');
 
     if (calculatedHash !== hash) {
-        console.warn(`Security Check Failed: Hash mismatch.`);
+        console.warn(`Security Check Failed: Hash mismatch. Calculated: ${calculatedHash}, Received: ${hash}`); // 🟢 تحسين: تسجيل الهاش المحسوب والمُستلم
         return false;
     }
 
@@ -208,7 +215,7 @@ function validateInitData(initData) {
     const expirationTime = 1200 * 1000; // 20 minutes limit
 
     if (currentTime - authDate > expirationTime) {
-        console.warn(`Security Check Failed: Data expired.`);
+        console.warn(`Security Check Failed: Data expired. Auth Date: ${new Date(authDate).toISOString()}`); // 🟢 تحسين: تسجيل وقت انتهاء الصلاحية
         return false;
     }
 
@@ -223,14 +230,15 @@ function validateInitData(initData) {
  */
 async function handleGetUserData(req, res, body) {
     const { user_id } = body;
-    if (!user_id) {
-        return sendError(res, 'Missing user_id for data fetch.');
-    }
+    
+    // 🟢 تحسين: التحقق من user_id (يجب أن يكون رقم صحيح موجب)
     const id = parseInt(user_id);
+    if (isNaN(id) || id <= 0) {
+        return sendError(res, 'Invalid user ID.', 400);
+    }
 
     try {
         // 1. Update last_activity immediately (to ensure accurate reset logic and rate limiting)
-        // ⚠️ NOTE: This update is only for the rate limit check and should not be used as a final timestamp.
         await supabaseFetch('users', 'PATCH',
             { last_activity: new Date().toISOString() },
             `?id=eq.${id}&select=id`);
@@ -283,7 +291,20 @@ async function handleGetUserData(req, res, body) {
  */
 async function handleRegister(req, res, body) {
   const { user_id, ref_by } = body;
+  
+  // 🟢 تحسين: التحقق من user_id
   const id = parseInt(user_id);
+  if (isNaN(id) || id <= 0) {
+    return sendError(res, 'Invalid user ID.', 400);
+  }
+  // 🟢 تحسين: التحقق من ref_by
+  const referrerId = ref_by ? parseInt(ref_by) : null;
+  if (referrerId !== null && (isNaN(referrerId) || referrerId <= 0)) {
+    // Treat invalid referrer as no referrer
+    console.warn(`Invalid referrer ID received: ${ref_by}. Ignoring.`);
+    ref_by = null;
+  }
+
 
   try {
     // 1. Check if user exists
@@ -296,7 +317,7 @@ async function handleRegister(req, res, body) {
         balance: 0,
         ads_watched_today: 0,
         spins_today: 0,
-        ref_by: ref_by ? parseInt(ref_by) : null,
+        ref_by: referrerId, // استخدام المتغير المُحقق
         last_activity: new Date().toISOString(), // ⬅️ Add value for new column
         is_banned: false // Default to not banned
       };
@@ -321,7 +342,13 @@ async function handleRegister(req, res, body) {
  */
 async function handleWatchAd(req, res, body) {
     const { user_id } = body;
+    
+    // 🟢 تحسين: التحقق من user_id
     const id = parseInt(user_id);
+    if (isNaN(id) || id <= 0) {
+        return sendError(res, 'Invalid user ID.', 400);
+    }
+
     const reward = REWARD_PER_AD;
 
     try {
@@ -382,12 +409,16 @@ async function handleWatchAd(req, res, body) {
 async function handleCommission(req, res, body) {
     const { referrer_id, referee_id } = body;
 
-    if (!referrer_id || !referee_id) {
+    // 🟢 تحسين: التحقق من كلا الـ IDs
+    const referrerId = parseInt(referrer_id);
+    const refereeId = parseInt(referee_id);
+    
+    if (isNaN(referrerId) || referrerId <= 0 || isNaN(refereeId) || refereeId <= 0) {
+        // لا نحتاج لإرجاع خطأ 400، مجرد تسجيل المشكلة والنجاح لأنها عملية مساعدة
+        console.warn(`Invalid commission IDs received. Referrer: ${referrer_id}, Referee: ${referee_id}. Aborting commission.`);
         return sendSuccess(res, { message: 'Invalid commission data received but acknowledged.' });
     }
 
-    const referrerId = parseInt(referrer_id);
-    const refereeId = parseInt(referee_id);
     const sourceReward = REWARD_PER_AD;
     const commissionAmount = sourceReward * REFERRAL_COMMISSION_RATE;
 
@@ -427,7 +458,12 @@ async function handleCommission(req, res, body) {
  */
 async function handleSpin(req, res, body) {
     const { user_id } = body;
+    
+    // 🟢 تحسين: التحقق من user_id
     const id = parseInt(user_id);
+    if (isNaN(id) || id <= 0) {
+        return sendError(res, 'Invalid user ID.', 400);
+    }
 
     try {
         // 1. Check and reset daily limits before proceeding
@@ -485,7 +521,12 @@ async function handleSpin(req, res, body) {
  */
 async function handleSpinResult(req, res, body) {
     const { user_id } = body;
+    
+    // 🟢 تحسين: التحقق من user_id
     const id = parseInt(user_id);
+    if (isNaN(id) || id <= 0) {
+        return sendError(res, 'Invalid user ID.', 400);
+    }
 
     // ⬅️ Calculate prize and index securely on the server
     const { prize, prizeIndex } = calculateRandomSpinPrize();
@@ -500,6 +541,14 @@ async function handleSpinResult(req, res, body) {
         // ⚠️ Banned Check
         if (users[0].is_banned) {
             return sendError(res, 'User is banned.', 403);
+        }
+        
+        // 🟢 تحسين: التحقق الإضافي من أن المستخدم لم يتجاوز حد اللفات اليومي قبل إعطاء الجائزة
+        const userSpins = await supabaseFetch('users', 'GET', null, `?id=eq.${id}&select=spins_today`);
+        if (Array.isArray(userSpins) && userSpins.length > 0 && userSpins[0].spins_today > DAILY_MAX_SPINS) {
+             console.warn(`User ${id} tried to claim spinResult after reaching the limit. Denying prize.`);
+             // إعادة إرسال خطأ الحد اليومي، لكن هذه المرة بعد عملية الـ spin
+             return sendError(res, `Daily spin limit (${DAILY_MAX_SPINS}) reached.`, 403);
         }
 
         const newBalance = users[0].balance + prize;
@@ -530,18 +579,27 @@ async function handleSpinResult(req, res, body) {
  */
 async function handleWithdraw(req, res, body) {
     const { user_id, binanceId, amount } = body;
+    
+    // 🟢 تحسين: التحقق من user_id
     const id = parseInt(user_id);
-    const withdrawalAmount = parseFloat(amount);
-    const MIN_WITHDRAW = 400; // Minimum withdrawal amount
+    if (isNaN(id) || id <= 0) {
+        return sendError(res, 'Invalid user ID.', 400);
+    }
 
-    if (withdrawalAmount < MIN_WITHDRAW) {
-        return sendError(res, `Minimum withdrawal amount is ${MIN_WITHDRAW} SHIB.`, 400);
+    // 🟢 تحسين: التحقق الصارم من الـ amount
+    const withdrawalAmount = parseFloat(amount);
+    if (isNaN(withdrawalAmount) || withdrawalAmount < MIN_WITHDRAW || withdrawalAmount % 1 !== 0) {
+        return sendError(res, `Invalid withdrawal amount. Must be an integer and at least ${MIN_WITHDRAW} SHIB.`, 400);
+    }
+    
+    // 🟢 تحسين: التحقق الصارم من الـ binanceId
+    if (!binanceId || typeof binanceId !== 'string' || !/^\d{8,}$/.test(binanceId)) {
+        return sendError(res, 'Invalid Binance User ID. Must be a string of at least 8 digits.', 400);
     }
 
     try {
         // 1. Fetch current user balance and banned status
         const users = await supabaseFetch('users', 'GET', null, `?id=eq.${id}&select=balance,is_banned`);
-        // ⚠️ Fix: The variable name was mistyped (ArrayOfusers instead of users)
         if (!Array.isArray(users) || users.length === 0) {
             return sendError(res, 'User not found.', 404);
         }
@@ -587,6 +645,12 @@ module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  
+  // 🟢 تحسين: إضافة Security Headers لمنع هجمات Clickjacking و MIME-sniffing
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  // 🟢 تحسين: سياسة المُحيل (Referrer-Policy)
+  res.setHeader('Referrer-Policy', 'no-referrer-when-downgrade');
 
   if (req.method === 'OPTIONS') {
     return sendSuccess(res);
