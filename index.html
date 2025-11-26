@@ -10,10 +10,8 @@
         @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap'); 
 
         *{margin:0;padding:0;box-sizing:border-box}
-        /* 🛠️ الإصلاح: تم تغيير الخلفية الافتراضية للجسم لتقليل الفلاش الأبيض عند التحميل */
         body{font-family:'Vazirmatn', Arial, Helvetica, sans-serif;overflow:hidden;background: #0d0c1d;}
         
-        /* ⚠️ NEW: Common background for all major screens */
         .app-screen {
             position: fixed;
             inset: 0;
@@ -22,18 +20,14 @@
             transition: opacity .5s ease-in;
             display: flex;
             flex-direction: column;
-            
-            /* 🛠️ الإصلاح: الحالة المخفية الافتراضية لجميع الشاشات */
             opacity: 0;
-            pointer-events: none; /* يمنع استقبال النقرات */
-            z-index: 10; /* مستوى التراكم الأساسي */
+            pointer-events: none; 
+            z-index: 10; 
         }
-
-        /* 🟢 الإصلاح: الحالة المرئية لجميع الشاشات */
         .app-screen.visible {
             opacity: 1;
             pointer-events: auto;
-            z-index: 20; /* مستوى أعلى لضمان الظهور فوق أي شاشة مخفية */
+            z-index: 20; 
         }
 
         /* Loading Screen - Neon enhancements */
@@ -45,7 +39,6 @@
         }
         .loading-screen.hidden{opacity:0;pointer-events:none}
         .loading-content{text-align:center;color:#fff}
-        /* ... (باقي خصائص شاشة التحميل) ... */
         .progress-container{
             width:300px;height:12px;background:rgba(255,255,255,.05);
             border-radius:10px;overflow:hidden;margin:2.5rem 0;
@@ -77,8 +70,7 @@
 
         /* Main Screen */
         .main-screen{
-            /* Inherits opacity:0 and pointer-events:none from .app-screen */
-            background-color: #f0f0f0; /* إضافة خلفية صلبة احتياطية */
+            background-color: #f0f0f0; 
         }
         
         .main-content{flex:1;display:flex;justify-content:center;align-items:center}
@@ -140,7 +132,6 @@
         .spin-progress-container {
             border-left: 5px solid #ff8c00; 
         }
-        /* ⬅️ تحديث نص الإعلانات المتبقية */
         .daily-progress-text, .spin-progress-text {font-size:14px;color:#333;margin-bottom:4px; font-weight: bold;}
         .daily-progress-bar, .spin-progress-bar {width:100%;height:12px;background:rgba(0,0,0,.1);border-radius:10px;overflow:hidden;margin-top:6px}
         .daily-progress-fill {height:100%;background:linear-gradient(90deg,#00f2fe,#4facfe);border-radius:10px;width:0%;transition:width .4s ease}
@@ -169,9 +160,7 @@
 
         /* ===== Spin Screen ===== */
         .spin-screen{
-            /* Inherits app-screen styles */
             display:flex;flex-direction:column;align-items:center;justify-content:center;
-            /* تم نقل opacity:0 و pointer-events:none إلى .app-screen */
             transition:opacity .3s ease;
         }
         #wheelBox{position:relative;margin-bottom:25px}
@@ -194,9 +183,7 @@
 
         /* ===== Withdraw Screen ===== */
         .withdraw-screen{
-            /* Inherits app-screen styles */
             display:flex;flex-direction:column;align-items:center;padding:20px 20px;
-            /* تم نقل opacity:0 و pointer-events:none إلى .app-screen */
             transition:opacity .3s ease;
             overflow-y: auto;
         }
@@ -210,7 +197,6 @@
             border-radius: 15px;
         }
         .withdraw-title{font-size:28px;color:#4a90e2;font-weight:700; text-shadow: 0 1px 1px rgba(0,0,0,.1);}
-        /* ... (باقي خصائص شاشة السحب) ... */
         .current-balance-info{
             font-size: 16px;
             color: #555;
@@ -291,9 +277,7 @@
         
         /* ===== Invite Screen ===== */
         .invite-screen{
-            /* Inherits app-screen styles */
             display:flex;flex-direction:column;align-items:center;padding:20px 20px;
-            /* تم نقل opacity:0 و pointer-events:none إلى .app-screen */
             transition:opacity .3s ease;
             overflow-y: auto;
         }
@@ -309,7 +293,6 @@
         .invite-title{ 
              font-size:28px;color:#4a90e2;font-weight:700; text-shadow: 0 1px 1px rgba(0,0,0,.1);
         }
-        /* ... (باقي خصائص شاشة الدعوات) ... */
         .referrals-count-info{
             font-size: 18px;
             color: #333;
@@ -481,7 +464,7 @@ You will earn 5% of the revenue from every referral you bring through ads!
             currentProgress += increment;
             if(currentProgress>=100){
                 currentProgress=100; clearInterval(loadingInterval);
-                // 🛠️ الإصلاح: إزالة التأخير (500 مللي ثانية) للانتقال المباشر
+                // 🛠️ FIX: Removed the 500ms delay to prevent loading screen hang
                 loadingScreen.classList.add('hidden');
                 initDailyProgress(); 
             }
@@ -536,34 +519,37 @@ You will earn 5% of the revenue from every referral you bring through ads!
         const API_URL = '/api'; 
         
         // ------------------------------------------------------------------
-        // ⚠️ NEW: Action ID Generation Function
+        // ⚠️ IMPROVED: Action ID Generation Function (More Complex)
         // ------------------------------------------------------------------
         function generateActionId() {
             // Generates a base64-encoded string of 16 random bytes (128 bits)
-            // Combined with timestamp to ensure uniqueness and complexity
+            const randomBytes = new Uint8Array(16);
+            window.crypto.getRandomValues(randomBytes);
+            
+            // Convert to a base36 string for a mix of numbers and letters
+            const hex = Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+            const randomPart = BigInt('0x' + hex).toString(36);
+            
             const timestampPart = Date.now().toString(36);
-            const randomPart = Math.random().toString(36).substring(2, 15);
+            
+            // Action ID structure: TIMESTAMP(BASE36)-RANDOM_BYTES(BASE36)
             return `${timestampPart}-${randomPart}`.toUpperCase();
         }
 
         // ------------------------------------------------------------------
-        // **fetchApi Function** (with added security: sending initData and action_id)
-        // ------------------------------------------------------------------
+        // **fetchApi Function** // ------------------------------------------------------------------
         async function fetchApi(payload) {
             if (!tgUser) {
-                // ⬅️ Improved Message
                 Telegram.WebApp.showAlert('🚨 Critical Error: User data not initialized. Please restart the app. [CODE: U_NIL]');
                 return { ok: false, error: 'User not initialized' };
             }
 
             const initData = Telegram.WebApp.initData;
             if (!initData) {
-                // ⬅️ Improved Message
                 Telegram.WebApp.showAlert('🚨 Critical Error: Initialization data is missing. Please restart the app. [CODE: ID_MS]');
                 return { ok: false, error: 'InitData missing' };
             }
 
-            // ⚠️ الإبقاء على مؤشر التقدم: ضروري لإخفاء التأخير الناتج عن طلب الشبكة
             if (typeof Telegram.WebApp.showProgress === 'function') {
                 Telegram.WebApp.showProgress();
             }
@@ -590,17 +576,16 @@ You will earn 5% of the revenue from every referral you bring through ads!
                 if (!response.ok || !data.ok) {
                     const errorMessage = data.error || `Server Error: ${response.status} ${response.statusText}`;
                     console.error(`API Call failed for type ${payload.type}:`, errorMessage);
-                    // ⬅️ Improved Message - Electronic 3D style
                     let alertMessage = `⚡️ OPERATION FAILED ⚡️\n\n[Reason] ${errorMessage}`;
                     if (response.status === 429) {
-                         // ⬅️ Updated: Shows the error message returned by the server's rate limit check
                          alertMessage = `🛑 RATE LIMIT EXCEEDED 🛑\n\n[ACTION REQUIRED] ${errorMessage}`;
                     } else if (response.status === 403 && errorMessage.includes('banned')) {
                          alertMessage = `🚨 ACCESS DENIED 🚨\n\n[STATUS] This user account has been banned.`;
                     } else if (errorMessage.includes('daily limit')) {
                          alertMessage = `⚠️ DAILY LIMIT REACHED ⚠️\n\n[STATUS] You have reached the maximum allowed actions for today.`;
                     } else if (errorMessage.includes('Action ID already used')) {
-                        alertMessage = `🔒 SECURITY ERROR 🔒\n\n[STATUS] This action ID has already been used. Please wait and try again.`;
+                        // ⚠️ IMPROVEMENT: Explicit message for Action ID error
+                        alertMessage = `🔒 SECURITY ERROR 🔒\n\n[STATUS] Action ID rejected: Replay attack detected or ID reused. Please try again normally.`;
                     }
                     Telegram.WebApp.showAlert(alertMessage);
                     return { ok: false, error: errorMessage };
@@ -612,7 +597,6 @@ You will earn 5% of the revenue from every referral you bring through ads!
                     Telegram.WebApp.hideProgress();
                 }
                 console.error(`General Fetch Error for type ${payload.type}:`, error.message);
-                 // ⬅️ Improved Message - Electronic 3D style
                 Telegram.WebApp.showAlert(`🔌 NETWORK ERROR 🔌\n\n[STATUS] Could not connect to the server. Please check your internet connection.`);
                 return { ok: false, error: error.message };
             }
@@ -621,14 +605,13 @@ You will earn 5% of the revenue from every referral you bring through ads!
         /* ===== Rewards, Limits, and Anti-Cheat (Limits here are for display only) ===== */
         const DAILY_MAX = 100;
         const DAILY_MAX_SPINS = 15;
-        // ❌ REMOVED: ADS_CLICK_COOLDOWN and SPIN_CLICK_COOLDOWN (No client-side rate limit)
-
+        
         let shibBalance = 0; 
         let adsWatchedToday = 0;
         let spinsToday = 0; 
         let withdrawalHistory = [];
         let referralsCount = 0; 
-        let isBanned = false; // ⚠️ NEW: Ban status check
+        let isBanned = false; 
         
         // Sectors: 5, 10, 15, 20, 5
         const sectors = [5, 10, 15, 20, 5]; 
@@ -646,16 +629,12 @@ You will earn 5% of the revenue from every referral you bring through ads!
         async function loadUserData() {
             if (!tgUser) return;
             
-            // ⚠️ Action ID is NOT used for simple GET request, but for POST requests with side effects
             const result = await fetchApi({ type: 'getUserData' }); 
 
             if (result.ok) {
-                // ⚠️ Check for ban status returned by the server
                 if (result.data.is_banned) {
                     isBanned = true;
-                    // ⬅️ Prevent access to the main screen
                     mainScreen.classList.remove('visible');
-                    // ⬅️ Show the ban message from the server response (or a default one)
                     Telegram.WebApp.showAlert('🚨 ACCOUNT BANNED 🚨\n\n[STATUS] This account has been permanently restricted due to policy violations. Access to the mini app is denied.');
                     return;
                 }
@@ -665,38 +644,29 @@ You will earn 5% of the revenue from every referral you bring through ads!
                     ads_watched_today: result.data.ads_watched_today,
                     spins_today: result.data.spins_today,
                     referrals_count: result.data.referrals_count,
-                    is_banned: false, // Ensure it's false if the check passed
+                    is_banned: false, 
                     withdrawal_history: (result.data.withdrawal_history || []).map(item => ({
                         amount: item.amount,
                         status: item.status,
-                        // Use a simple, accepted format
                         date: new Date(item.created_at).toLocaleDateString('en-GB') 
                     }))
                 });
                 
-                mainScreen.classList.add('visible'); // Show only if not banned
+                mainScreen.classList.add('visible'); 
 
-            } else {
-                 // If getUserData fails during loading, the error message is already shown by fetchApi
-                 // We don't call updateState to avoid setting up UI with bad data
             }
         }
         
         async function initDailyProgress(){
             if (!tgUser) return;
 
-            // 1. Register/Check existence
             const registerResult = await fetchApi({ 
                 type: 'register',
                 ref_by: referrerId ? referrerId : null 
-                // ⚠️ NOTE: Register does not need Action ID, as it is idempotent (harmless to repeat)
             });
 
             if (registerResult.ok) {
-                // 2. Load user data after successful registration/check
                 await loadUserData(); 
-            } else {
-                // If registration fails (e.g., user is banned), the error is already shown by fetchApi
             }
         }
         
@@ -704,19 +674,16 @@ You will earn 5% of the revenue from every referral you bring through ads!
             document.getElementById('shibBalance').textContent = shibBalance.toLocaleString() + ' SHIB';
             document.getElementById('withdrawBalanceDisplay').textContent = shibBalance.toLocaleString() + ' SHIB';
 
-            // ⬅️ Display ad count and progress (Uses DAILY_MAX = 100)
             document.getElementById('adsCount').textContent = adsWatchedToday;
             const adsPercent = Math.min((adsWatchedToday / DAILY_MAX) * 100, 100);
             document.getElementById('dailyProgressFill').style.width = adsPercent + '%';
 
-            // ⬅️ Display spin count and progress (Uses DAILY_MAX_SPINS = 15)
             document.getElementById('spinsCount').textContent = spinsToday; 
             const spinsPercent = Math.min((spinsToday / DAILY_MAX_SPINS) * 100, 100);
             document.getElementById('spinProgressFill').style.width = spinsPercent + '%';
 
             document.getElementById('referralsCountDisplay').textContent = referralsCount.toLocaleString();
             
-            // ⬅️ Update Ad button availability based on server state
             const adButton = document.querySelector('button[onclick="watchAds()"]');
             if (adButton) {
                 if (isBanned || adsWatchedToday >= DAILY_MAX) {
@@ -759,7 +726,7 @@ You will earn 5% of the revenue from every referral you bring through ads!
                     });
 
                     if (adResult.ok) {
-                        const actualReward = adResult.data.actual_reward; // ⬅️ Receive actual reward from server
+                        const actualReward = adResult.data.actual_reward; 
                         
                         // 2. Update UI with trusted server values
                         updateState({
@@ -773,26 +740,21 @@ You will earn 5% of the revenue from every referral you bring through ads!
                                 type: 'commission',
                                 referrer_id: referrerId,
                                 referee_id: tgUser.id
-                                // ⚠️ NOTE: Commission is a server-to-server action, no Action ID needed
                             }).then(r => {
                                 if (r.ok) { console.log('Commission sent successfully.'); }
                                 else { console.warn('Commission failed to send:', r.error); }
                             });
                         }
                         
-                        // ⬅️ Improved Message - Electronic 3D style
                         let adAlert = `🎉 REWARD GRANTED 🎉\n\n[CREDIT] Ad watched, you earned ${actualReward} SHIB.`;
                         if(adResult.data.new_ads_count >= DAILY_MAX){
                             adAlert = `🏆 MISSION ACCOMPLISHED 🏆\n\n[CONGRATS] You completed all ${DAILY_MAX} ads today. Come back tomorrow!`;
                         }
                         Telegram.WebApp.showAlert(adAlert);
-                    } else {
-                         // The error message for limit/rate limit is already shown by fetchApi
                     }
                 })
                 .catch(e => {
                     console.error("GigaPub Ad failed to show or was dismissed:", e);
-                     // ⬅️ Improved Message
                     Telegram.WebApp.showAlert('❌ AD LOAD FAIL ❌\n\n[ERROR] Failed to load advertisement. Please try again.');
                 });
         }
@@ -835,18 +797,15 @@ You will earn 5% of the revenue from every referral you bring through ads!
             const inviteLink = document.getElementById('referralLinkInput').value;
             
             if (inviteLink === 'User data not available.' || inviteLink === 'Generating Link...') {
-                 // ⬅️ Improved Message
                 Telegram.WebApp.showAlert('❌ ERROR ❌\n\n[STATUS] The referral link is not ready yet. Please wait a moment.');
                 return;
             }
 
             navigator.clipboard.writeText(inviteLink).then(() => {
                 Telegram.WebApp.HapticFeedback.notificationOccurred('success');
-                // ⬅️ Improved Message
                 Telegram.WebApp.showAlert('✅ LINK COPIED ✅\n\n[STATUS] Referral link copied to clipboard.');
             }).catch(err => {
                 console.error('Failed to copy text: ', err);
-                 // ⬅️ Improved Message
                 Telegram.WebApp.showAlert('❌ COPY FAILED ❌\n\n[ERROR] Failed to copy link. Please try again.');
             });
         }
@@ -854,9 +813,7 @@ You will earn 5% of the revenue from every referral you bring through ads!
 
 
         /* ===== Spin Wheel (Wheel Code) ===== */
-        // Colors corresponding to the 5 sectors
         const colors = ['#00bfff', '#ff8c00', '#28a745', '#ff4500', '#00f2fe'];
-        // Prize values (same as sectors: 5, 10, 15, 20, 5)
         const prizeValues = sectors; 
         const canvas = document.getElementById('wheelCanvas');
         const ctx = canvas.getContext('2d');
@@ -869,13 +826,12 @@ You will earn 5% of the revenue from every referral you bring through ads!
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
             const radius = 130;
-            // 2 * Math.PI / 5 = 0.4 * Math.PI (72 degrees)
-            const arc = 2 * Math.PI / sectors.length;
+            const sectorCount = sectors.length;
+            const arc = 2 * Math.PI / sectorCount;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             sectors.forEach((val, i) => {
-                // Adjust start angle so the first sector is at the top
                 const start = i * arc - Math.PI / 2; 
                 
                 // Draw sector background
@@ -886,7 +842,7 @@ You will earn 5% of the revenue from every referral you bring through ads!
                 ctx.closePath();
                 ctx.fill();
 
-                // Draw sector border (white line dividing sectors)
+                // Draw sector border
                 ctx.beginPath();
                 ctx.strokeStyle = '#fff'; 
                 ctx.lineWidth = 3;
@@ -895,22 +851,22 @@ You will earn 5% of the revenue from every referral you bring through ads!
                 ctx.closePath();
                 ctx.stroke();
 
-                // 🛠️ NEW: Draw Prize Value
+                // Draw Prize Value
                 ctx.save();
                 ctx.translate(centerX, centerY);
                 
-                // Rotation angle for the text (i * arc + half_arc)
                 const textAngle = i * arc + arc / 2;
                 
-                ctx.rotate(textAngle); // Rotate to align text in the center of the sector
+                ctx.rotate(textAngle); 
 
                 ctx.textAlign = 'center';
                 ctx.fillStyle = '#fff'; 
-                ctx.font = 'bold 24px Orbitron, sans-serif'; 
+                // 🛠️ FIX: Use a clear, large font for the prize value
+                ctx.font = 'bold 28px Orbitron, sans-serif'; 
                 ctx.shadowColor = '#000';
                 ctx.shadowBlur = 4;
                 
-                // Draw prize value text (SHIB is too long, use the number)
+                // Draw prize value text
                 ctx.fillText(prizeValues[i], radius / 1.5, 0); 
                 
                 ctx.restore();
@@ -943,21 +899,19 @@ You will earn 5% of the revenue from every referral you bring through ads!
             }
             
             if (spinsToday >= DAILY_MAX_SPINS) {
-                 // The message will be shown by fetchApi if the server also rejects it
                 return;
             }
             
             // ⚠️ NEW: Generate Action ID for the spin request (before showing the ad)
             const spinActionId = generateActionId();
             
-            // 1. Request spin attempt registration first (Server checks rate limit and daily limit, and records Action ID)
+            // 1. Request spin attempt registration first (Server checks rate limit, daily limit, and records Action ID)
             const spinReqResult = await fetchApi({ 
                 type: 'spin',
                 action_id: spinActionId
             });
 
             if (!spinReqResult.ok) {
-                 // Error shown by fetchApi (rate limit/daily limit/Action ID check)
                 await loadUserData(); 
                 return; 
             }
@@ -970,7 +924,6 @@ You will earn 5% of the revenue from every referral you bring through ads!
                 .then(async () => {
                     spinning = true;
                     spinBtn.disabled = true;
-                    // 🛠️ الإصلاح: تبسيط رسالة البداية
                     spinResult.textContent = 'Spinning...'; 
                     
                     // ⚠️ NEW: Generate a SECOND Action ID for the spinResult (after the ad)
@@ -984,24 +937,15 @@ You will earn 5% of the revenue from every referral you bring through ads!
                     
                     if (spinResultRes.ok) {
                         const finalPrize = spinResultRes.data.actual_prize; 
-                        // prizeIndex from server (0-based: 0, 1, 2, 3, 4)
                         const prizeIndex = spinResultRes.data.prize_index !== undefined ? spinResultRes.data.prize_index : 0; 
                         
-                        // Angle calculation logic based on received index
                         const sectorCount = sectors.length; 
                         const arc = 2 * Math.PI / sectorCount; 
                         
-                        // Target the *center* of the winning sector (Index 0 is the top sector)
-                        // Rotation must move the center of the winning sector to the arrow's position (12 o'clock)
-                        
-                        // Angle of the winning sector's center (relative to the positive x-axis, 3 o'clock)
                         const winningAngle = prizeIndex * arc + arc / 2; 
                         
-                        // The wheel is drawn with the center of sector 0 at 12 o'clock, so we need to:
-                        // 1. Rotate to align winning angle with 12 o'clock (Math.PI / 2)
                         let rotationToApply = Math.PI / 2 - winningAngle;
                         
-                        // 2. Add multiple full rotations (e.g., 5 full spins)
                         rotationToApply = rotationToApply + (5 * 2 * Math.PI); 
                         
                         currentAngle += rotationToApply;
@@ -1012,9 +956,8 @@ You will earn 5% of the revenue from every referral you bring through ads!
                         setTimeout(async ()=>{
                             canvas.style.transition = 'none'; 
                             
-                            // 4. Update balance with trusted server value (Correct Timing)
+                            // 4. Update balance with trusted server value 
                             updateState({ balance: spinResultRes.data.new_balance });
-                             // ⬅️ Improved Message
                             spinResult.textContent = `\n\n[WINNER] You won ${finalPrize} SHIB!`;
                             
                             await loadUserData(); 
@@ -1022,7 +965,6 @@ You will earn 5% of the revenue from every referral you bring through ads!
                         },4000); 
 
                     } else {
-                         // The error message for failure is already shown by fetchApi
                         spinResult.textContent = `❌ ERROR ❌\n\n[STATUS] Error receiving prize. Please try again.`;
                         await loadUserData(); 
                     }
@@ -1032,9 +974,7 @@ You will earn 5% of the revenue from every referral you bring through ads!
                 })
                 .catch(e => {
                     console.error("GigaPub Ad failed to show or was dismissed:", e);
-                     // ⬅️ Improved Message
                     Telegram.WebApp.showAlert('❌ AD LOAD FAIL ❌\n\n[STATUS] Failed to load ad. Spin was not counted. Please try again.');
-                    // ⚠️ Need to re-load data to revert the spinsToday count if the ad failed
                     loadUserData(); 
                 });
         }
@@ -1106,7 +1046,6 @@ You will earn 5% of the revenue from every referral you bring through ads!
             const binanceId = document.getElementById('binanceId').value.trim();
             const amount = parseInt(document.getElementById('withdrawAmount').value);
             
-            // ⬅️ Improved Messages
             if(!binanceId || binanceId.length < 8){ Telegram.WebApp.showAlert('⚠️ INVALID INPUT ⚠️\n\n[STATUS] Please enter a valid Binance User ID (minimum 8 digits).'); return; }
             if(isNaN(amount) || amount < 400){ Telegram.WebApp.showAlert('⚠️ INVALID AMOUNT ⚠️\n\n[STATUS] The minimum withdrawal amount is 400 SHIB.'); return; }
             if(amount > shibBalance){ Telegram.WebApp.showAlert(`❌ BALANCE ERROR ❌\n\n[STATUS] Insufficient balance. Your current balance is ${shibBalance.toLocaleString()} SHIB.`); return; }
@@ -1130,7 +1069,6 @@ You will earn 5% of the revenue from every referral you bring through ads!
                 await loadUserData(); 
                 displayWithdrawals(); 
                 
-                // ⬅️ Improved Message
                 Telegram.WebApp.showAlert(`✅ REQUEST SENT ✅\n\n[DETAILS] Binance ID: ${binanceId}\n[AMOUNT] ${amount.toLocaleString()} SHIB\n\nThe transfer will be processed within 24 hours.`);
             }
         }
