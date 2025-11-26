@@ -579,7 +579,8 @@ You will earn 5% of the revenue from every referral you bring through ads!
                     // ⬅️ Improved Message - Electronic 3D style
                     let alertMessage = `⚡️ OPERATION FAILED ⚡️\n\n[Reason] ${errorMessage}`;
                     if (response.status === 429) {
-                         alertMessage = `🛑 RATE LIMIT EXCEEDED 🛑\n\n[ACTION REQUIRED] Please wait a few seconds before trying again. The system is protecting against abuse.`;
+                         // ⬅️ Updated: Shows the error message returned by the server's rate limit check
+                         alertMessage = `🛑 RATE LIMIT EXCEEDED 🛑\n\n[ACTION REQUIRED] ${errorMessage}`;
                     } else if (response.status === 403 && errorMessage.includes('banned')) {
                          alertMessage = `🚨 ACCESS DENIED 🚨\n\n[STATUS] This user account has been banned.`;
                     } else if (errorMessage.includes('daily limit')) {
@@ -604,9 +605,7 @@ You will earn 5% of the revenue from every referral you bring through ads!
         /* ===== Rewards, Limits, and Anti-Cheat (Limits here are for display only) ===== */
         const DAILY_MAX = 100;
         const DAILY_MAX_SPINS = 15;
-        // Client-side cooldown is only for UI/UX, the server is the source of truth
-        const ADS_CLICK_COOLDOWN  = 1000;
-        const SPIN_CLICK_COOLDOWN = 1000; 
+        // ❌ REMOVED: ADS_CLICK_COOLDOWN and SPIN_CLICK_COOLDOWN (No client-side rate limit)
 
         let shibBalance = 0; 
         let adsWatchedToday = 0;
@@ -688,15 +687,29 @@ You will earn 5% of the revenue from every referral you bring through ads!
             document.getElementById('shibBalance').textContent = shibBalance.toLocaleString() + ' SHIB';
             document.getElementById('withdrawBalanceDisplay').textContent = shibBalance.toLocaleString() + ' SHIB';
 
+            // ⬅️ Display ad count and progress (Uses DAILY_MAX = 100)
             document.getElementById('adsCount').textContent = adsWatchedToday;
             const adsPercent = Math.min((adsWatchedToday / DAILY_MAX) * 100, 100);
             document.getElementById('dailyProgressFill').style.width = adsPercent + '%';
 
+            // ⬅️ Display spin count and progress (Uses DAILY_MAX_SPINS = 15)
             document.getElementById('spinsCount').textContent = spinsToday; 
             const spinsPercent = Math.min((spinsToday / DAILY_MAX_SPINS) * 100, 100);
             document.getElementById('spinProgressFill').style.width = spinsPercent + '%';
 
             document.getElementById('referralsCountDisplay').textContent = referralsCount.toLocaleString();
+            
+            // ⬅️ Update Ad button availability based on server state
+            const adButton = document.querySelector('button[onclick="watchAds()"]');
+            if (adButton) {
+                if (isBanned || adsWatchedToday >= DAILY_MAX) {
+                    adButton.disabled = true;
+                    adButton.querySelector('span').textContent = 'LIMIT REACHED';
+                } else {
+                    adButton.disabled = false;
+                    adButton.querySelector('span').textContent = 'Ads';
+                }
+            }
 
             const spinBtn = document.getElementById('spinBtn');
             if (spinBtn) {
@@ -716,15 +729,7 @@ You will earn 5% of the revenue from every referral you bring through ads!
                  return;
             }
 
-            const now = Date.now();
-            const lastClick = parseInt(sessionStorage.getItem('lastAdClickTime') || 0);
-            // Client-side quick spam protection (server check is the real security)
-            if (now - lastClick < ADS_CLICK_COOLDOWN) {
-                console.warn('Click ignored: Too fast ad click.');
-                Telegram.WebApp.showAlert('🛑 WARNING 🛑\n\n[STATUS] Too many requests. Please slow down your activity.');
-                return;
-            }
-            sessionStorage.setItem('lastAdClickTime', now);
+            // ❌ REMOVED: Client-side quick spam protection (server check is the real security)
             
             
             window.showGiga()
@@ -884,17 +889,8 @@ You will earn 5% of the revenue from every referral you bring through ads!
                  Telegram.WebApp.showAlert('🚨 ACCESS DENIED 🚨\n\n[STATUS] This user account has been banned.');
                  return;
             }
-
-            const now = Date.now();
-            const lastClick = parseInt(sessionStorage.getItem('lastSpinClickTime') || 0);
             
-            // Client-side quick spam protection
-            if (now - lastClick < SPIN_CLICK_COOLDOWN) {
-                console.warn('Click ignored: Too fast spin click.');
-                Telegram.WebApp.showAlert('🛑 WARNING 🛑\n\n[STATUS] Too many requests. Please slow down your activity.');
-                return;
-            }
-            sessionStorage.setItem('lastSpinClickTime', now);
+            // ❌ REMOVED: Client-side quick spam protection
 
             if (spinsToday >= DAILY_MAX_SPINS) {
                  // The message will be shown by fetchApi if the server also rejects it
