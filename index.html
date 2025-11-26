@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SHIB Ads WebApp</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://telegram.org https://ad.gigapub.tech; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://telegram.org; img-src 'self' data: https:;">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
@@ -410,7 +411,7 @@
         <div class="input-form-container">
             <div class="input-group">
                 <label>Binance User ID</label>
-                <input type="text" id="binanceId" placeholder="Enter your Binance ID">
+                <input type="text" id="binanceId" pattern="[0-9]{8,}" placeholder="Enter your Binance ID">
             </div>
             <div class="input-group">
                 <label>Amount in SHIB (Min 400)</label>
@@ -588,6 +589,8 @@ You will earn 5% of the revenue from every referral you bring through ads!
                          alertMessage = `🚨 ACCESS DENIED 🚨\n\n[STATUS] This user account has been banned.`;
                     } else if (errorMessage.includes('daily limit')) {
                          alertMessage = `⚠️ DAILY LIMIT REACHED ⚠️\n\n[STATUS] You have reached the maximum allowed actions for today.`;
+                    } else if (response.status === 400 && errorMessage.includes('withdrawal')) {
+                         alertMessage = `❌ WITHDRAWAL ERROR ❌\n\n[STATUS] ${errorMessage}`;
                     }
                     Telegram.WebApp.showAlert(alertMessage);
                     return { ok: false, error: errorMessage };
@@ -1026,7 +1029,7 @@ You will earn 5% of the revenue from every referral you bring through ads!
             tableHTML += '<tbody>';
 
             withdrawalHistory.forEach(record => {
-                const statusClass = record.status === 'Pending' ? 'status-pending' : 'status-completed';
+                const statusClass = record.status === 'pending' ? 'status-pending' : 'status-completed'; // 🟢 FIX: استخدام 'pending' كما هو في الواجهة الخلفية
                 tableHTML += `
                     <tr>
                         <td>${record.date}</td>
@@ -1049,8 +1052,10 @@ You will earn 5% of the revenue from every referral you bring through ads!
             const binanceId = document.getElementById('binanceId').value.trim();
             const amount = parseInt(document.getElementById('withdrawAmount').value);
             
+            // 🟢 تحسين: التحقق الأمني من الـ Binance ID (يجب أن يكون رقمي بالكامل وطوله 8 على الأقل)
+            if(!/^\d{8,}$/.test(binanceId)){ Telegram.WebApp.showAlert('⚠️ INVALID INPUT ⚠️\n\n[STATUS] Please enter a valid Binance User ID (minimum 8 digits, numbers only).'); return; }
+            
             // ⬅️ Improved Messages
-            if(!binanceId || binanceId.length < 8){ Telegram.WebApp.showAlert('⚠️ INVALID INPUT ⚠️\n\n[STATUS] Please enter a valid Binance User ID (minimum 8 digits).'); return; }
             if(isNaN(amount) || amount < 400){ Telegram.WebApp.showAlert('⚠️ INVALID AMOUNT ⚠️\n\n[STATUS] The minimum withdrawal amount is 400 SHIB.'); return; }
             if(amount > shibBalance){ Telegram.WebApp.showAlert(`❌ BALANCE ERROR ❌\n\n[STATUS] Insufficient balance. Your current balance is ${shibBalance.toLocaleString()} SHIB.`); return; }
             
@@ -1071,7 +1076,13 @@ You will earn 5% of the revenue from every referral you bring through ads!
                 
                 // ⬅️ Improved Message
                 Telegram.WebApp.showAlert(`✅ REQUEST SENT ✅\n\n[DETAILS] Binance ID: ${binanceId}\n[AMOUNT] ${amount.toLocaleString()} SHIB\n\nThe transfer will be processed within 24 hours.`);
+                
+                // 🟢 تحسين: مسح حقول الإدخال بعد الإرسال الناجح
+                document.getElementById('binanceId').value = '';
+                document.getElementById('withdrawAmount').value = '';
+
             }
+            // إذا كان هناك خطأ، سيتم إظهاره بواسطة fetchApi
         }
     </script>
 </body>
