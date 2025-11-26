@@ -12,7 +12,18 @@
         *{margin:0;padding:0;box-sizing:border-box}
         body{font-family:'Vazirmatn', Arial, Helvetica, sans-serif;overflow:hidden;background:#fff}
         
-        /* شاشة التحميل - تحسينات النيون */
+        /* ⚠️ NEW: Common background for all major screens */
+        .app-screen {
+            position: fixed;
+            inset: 0;
+            background: url('img.png') no-repeat center center;
+            background-size: cover;
+            transition: opacity .5s ease-in;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Loading Screen - Neon enhancements */
         .loading-screen{
             position:fixed;inset:0;
             background: #0d0c1d;
@@ -50,21 +61,15 @@
             100% { opacity: 1; transform: scale(1.05); }
         }
 
-        /* الشاشة الرئيسية */
+        /* Main Screen */
         .main-screen{
-            position:fixed;
-            inset:0;
-            background: url('img.png') no-repeat center center; 
-            background-size: cover; 
+            /* Inherits app-screen styles */
             opacity:0;
-            transition:opacity .5s ease-in;
-            display:flex;
-            flex-direction:column
         }
         .main-screen.visible{opacity:1}
         .main-content{flex:1;display:flex;justify-content:center;align-items:center}
         
-        /* دائرة المستخدم */
+        /* User Circle */
         .user-circle{
             position:absolute;top:20px;left:20px;width:70px;height:70px;border:2px dashed #ccc;
             border-radius:50%;display:flex;flex-direction:column;justify-content:center;
@@ -97,7 +102,7 @@
 
         .balance{position:absolute;top:20px;right:20px;background:#fff;border:1px solid #ff5a5a;border-radius:12px;padding:8px 12px;font-family:'Courier New',monospace;font-size:16px;color:#ff2a2a;text-shadow:0 0 2px #ffbbbb;letter-spacing:1px;z-index:101;box-shadow:0 4px 6px rgba(0,0,0,.05)}
         
-        /* حاويات التقدم المشتركة */
+        /* Shared Progress Containers */
         .progress-group-container {
             position: absolute;
             top: 50%;
@@ -126,7 +131,7 @@
         .daily-progress-fill {height:100%;background:linear-gradient(90deg,#00f2fe,#4facfe);border-radius:10px;width:0%;transition:width .4s ease}
         .spin-progress-fill {height:100%;background:linear-gradient(90deg,#ff8c00, #ff4500);border-radius:10px;width:0%;transition:width .4s ease}
 
-        /* تعديلات الأزرار */
+        /* Button Adjustments */
         .button-container{
             position:absolute;bottom:40px;left:50%;transform:translateX(-50%);
             display:flex;gap:10px;
@@ -147,9 +152,9 @@
         .nav-button:active{transform:translateY(2px);box-shadow:0 3px 0 #2c5aa0,0 5px 8px rgba(0,0,0,.15)}
         .nav-button span{display:block;text-shadow:0 1px 2px rgba(0,0,0,.3)}
 
-        /* ===== شاشة Spin ===== */
+        /* ===== Spin Screen ===== */
         .spin-screen{
-            position:fixed;inset:0;background:#f5f7fa;
+            /* Inherits app-screen styles */
             display:flex;flex-direction:column;align-items:center;justify-content:center;
             opacity:0;pointer-events:none;transition:opacity .3s ease;
         }
@@ -172,9 +177,9 @@
         .spin-back{margin-top:25px;background:#6c757d;color:#fff;border:none;padding:10px 25px;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;box-shadow:0 4px 0 #5a6268}
         .spin-back:active{transform:translateY(2px);box-shadow:0 2px 0 #5a6268}
 
-        /* ===== شاشة Withdraw ===== */
+        /* ===== Withdraw Screen ===== */
         .withdraw-screen{
-            position:fixed;inset:0;background:#f5f7fa; 
+            /* Inherits app-screen styles */
             display:flex;flex-direction:column;align-items:center;padding:20px 20px;
             opacity:0;pointer-events:none;transition:opacity .3s ease;
             overflow-y: auto;
@@ -185,6 +190,9 @@
             margin-bottom: 25px;
             width: 100%;
             max-width: 400px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 15px;
         }
         .withdraw-title{font-size:28px;color:#4a90e2;font-weight:700; text-shadow: 0 1px 1px rgba(0,0,0,.1);}
         .current-balance-info{
@@ -225,13 +233,16 @@
         .back-btn:active{transform:translateY(3px);box-shadow:0 2px 0 #4e555b}
         .note{margin-top:15px;font-size:13px;color:#777;max-width:400px;text-align:center;background:rgba(255,140,0,0.1);padding:10px;border-radius:10px;border-left: 5px solid #ff8c00;}
 
-        /* جدول السحوبات */
+        /* Withdrawal History Table */
         .history-section{
             width: 100%;
             max-width: 400px;
             margin-top: 30px;
             padding: 20px 0;
             border-top: 1px solid #eee;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 15px;
         }
         .history-title{
             font-size: 20px;
@@ -262,9 +273,9 @@
         .status-completed{color: #28a745; font-weight: bold;}
         .no-records{text-align: center; color: #999; padding: 20px;}
         
-        /* ===== شاشة Invite ===== */
+        /* ===== Invite Screen ===== */
         .invite-screen{
-            position:fixed;inset:0;background:#f5f7fa; 
+            /* Inherits app-screen styles */
             display:flex;flex-direction:column;align-items:center;padding:20px 20px;
             opacity:0;pointer-events:none;transition:opacity .3s ease;
             overflow-y: auto;
@@ -275,6 +286,9 @@
             margin-bottom: 25px;
             width: 100%;
             max-width: 400px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 15px;
         }
         .invite-title{ 
              font-size:28px;color:#4a90e2;font-weight:700; text-shadow: 0 1px 1px rgba(0,0,0,.1);
@@ -324,8 +338,8 @@
             <div class="loading-text" id="loadingText">Connecting to SHIB Network...</div>
         </div>
     </div>
-
-    <div class="main-screen" id="mainScreen">
+    
+    <div class="app-screen main-screen" id="mainScreen">
         <div class="balance" id="shibBalance">0 SHIB</div>
         
         <div class="progress-group-container">
@@ -360,7 +374,7 @@
         </div>
         </div>
 
-    <div class="spin-screen" id="spinScreen">
+    <div class="app-screen spin-screen" id="spinScreen">
         <div id="wheelBox">
             <div class="arrow"></div>
             <canvas id="wheelCanvas" width="280" height="280"></canvas>
@@ -370,7 +384,7 @@
         <button class="spin-back" onclick="hideSpin()">Back</button>
     </div>
 
-    <div class="withdraw-screen" id="withdrawScreen">
+    <div class="app-screen withdraw-screen" id="withdrawScreen">
         <div class="withdraw-header">
             <h2 class="withdraw-title">💰 Request SHIB Withdrawal</h2>
             <div class="current-balance-info">Your Balance: <span id="withdrawBalanceDisplay">0 SHIB</span></div>
@@ -403,7 +417,7 @@
         <button class="back-btn" onclick="hideWithdraw()">Back to Main</button>
     </div>
 
-    <div class="invite-screen" id="inviteScreen">
+    <div class="app-screen invite-screen" id="inviteScreen">
         <div class="invite-header">
             <h2 class="invite-title">🤝 Invite Friends & Earn SHIB</h2>
             <div class="referrals-count-info">
@@ -431,7 +445,7 @@ You will earn 5% of the revenue from every referral you bring through ads!
     </div>
     <script src="https://ad.gigapub.tech/script?id=3459"></script>
     <script>
-        /* ===== التحميل ===== */
+        /* ===== Loading ===== */
         const progressBar = document.getElementById('progressBar');
         const percentageTxt = document.getElementById('percentage');
         const loadingTxt = document.getElementById('loadingText');
@@ -453,7 +467,6 @@ You will earn 5% of the revenue from every referral you bring through ads!
                 setTimeout(()=>{
                     loadingScreen.classList.add('hidden');
                     initDailyProgress(); 
-                    mainScreen.classList.add('visible');
                 },500);
             }
             progressBar.style.width = currentProgress+'%';
@@ -507,19 +520,19 @@ You will earn 5% of the revenue from every referral you bring through ads!
         const API_URL = '/api'; 
 
         // ------------------------------------------------------------------
-        // **دالة fetchApi** (مع تصحيح الأمان: إرسال initData)
+        // **fetchApi Function** (with added security: sending initData)
         // ------------------------------------------------------------------
         async function fetchApi(payload) {
             if (!tgUser) {
-                // ⬅️ تم تحسين الرسالة
-                Telegram.WebApp.showAlert('❌ User data not initialized. Please restart the app.');
+                // ⬅️ Improved Message
+                Telegram.WebApp.showAlert('🚨 Critical Error: User data not initialized. Please restart the app. [CODE: U_NIL]');
                 return { ok: false, error: 'User not initialized' };
             }
 
             const initData = Telegram.WebApp.initData;
             if (!initData) {
-                // ⬅️ تم تحسين الرسالة
-                Telegram.WebApp.showAlert('❌ Initialization data is missing. Please restart the app.');
+                // ⬅️ Improved Message
+                Telegram.WebApp.showAlert('🚨 Critical Error: Initialization data is missing. Please restart the app. [CODE: ID_MS]');
                 return { ok: false, error: 'InitData missing' };
             }
 
@@ -549,8 +562,16 @@ You will earn 5% of the revenue from every referral you bring through ads!
                 if (!response.ok || !data.ok) {
                     const errorMessage = data.error || `Server Error: ${response.status} ${response.statusText}`;
                     console.error(`API Call failed for type ${payload.type}:`, errorMessage);
-                    // ⬅️ تم تحسين الرسالة وإزالة الكود
-                    Telegram.WebApp.showAlert(`❌ Operation Failed. Reason: ${errorMessage}`);
+                    // ⬅️ Improved Message - Electronic 3D style
+                    let alertMessage = `⚡️ OPERATION FAILED ⚡️\n\n[Reason] ${errorMessage}`;
+                    if (response.status === 429) {
+                         alertMessage = `🛑 RATE LIMIT EXCEEDED 🛑\n\n[ACTION REQUIRED] Please wait a few seconds before trying again. The system is protecting against abuse.`;
+                    } else if (response.status === 403 && errorMessage.includes('banned')) {
+                         alertMessage = `🚨 ACCESS DENIED 🚨\n\n[STATUS] This user account has been banned.`;
+                    } else if (errorMessage.includes('daily limit')) {
+                         alertMessage = `⚠️ DAILY LIMIT REACHED ⚠️\n\n[STATUS] You have reached the maximum allowed actions for today.`;
+                    }
+                    Telegram.WebApp.showAlert(alertMessage);
                     return { ok: false, error: errorMessage };
                 }
 
@@ -560,16 +581,16 @@ You will earn 5% of the revenue from every referral you bring through ads!
                     Telegram.WebApp.hideProgress();
                 }
                 console.error(`General Fetch Error for type ${payload.type}:`, error.message);
-                 // ⬅️ تم تحسين الرسالة وإزالة الكود
-                Telegram.WebApp.showAlert(`❌ Network Error: Could not connect. Please check your internet connection.`);
+                 // ⬅️ Improved Message - Electronic 3D style
+                Telegram.WebApp.showAlert(`🔌 NETWORK ERROR 🔌\n\n[STATUS] Could not connect to the server. Please check your internet connection.`);
                 return { ok: false, error: error.message };
             }
         }
 
-        /* ===== أنظمة المكافآت والحدود وحماية النقرات السريعة (الحدود لا تزال هنا للعرض فقط) ===== */
+        /* ===== Rewards, Limits, and Anti-Cheat (Limits here are for display only) ===== */
         const DAILY_MAX = 100;
         const DAILY_MAX_SPINS = 15;
-
+        // Client-side cooldown is only for UI/UX, the server is the source of truth
         const ADS_CLICK_COOLDOWN  = 1000;
         const SPIN_CLICK_COOLDOWN = 1000; 
 
@@ -578,9 +599,10 @@ You will earn 5% of the revenue from every referral you bring through ads!
         let spinsToday = 0; 
         let withdrawalHistory = [];
         let referralsCount = 0; 
+        let isBanned = false; // ⚠️ NEW: Ban status check
         
-        // قائمة القطاعات تبقى هنا لأجل الأنميشن فقط، والقيمة الفائزة تُحدد على الخادم.
-        // الترتيب: 5, 10, 15, 20, 5
+        // Sectors remain here for animation purposes only
+        // Sectors: 5, 10, 15, 20, 5
         const sectors = [5, 10, 15, 20, 5]; 
 
         function updateState(data) {
@@ -589,6 +611,7 @@ You will earn 5% of the revenue from every referral you bring through ads!
             spinsToday = data.spins_today !== undefined ? data.spins_today : spinsToday;
             referralsCount = data.referrals_count !== undefined ? data.referrals_count : referralsCount;
             withdrawalHistory = data.withdrawal_history !== undefined ? data.withdrawal_history : withdrawalHistory;
+            isBanned = data.is_banned !== undefined ? data.is_banned : isBanned;
             updateUI();
         }
         
@@ -598,32 +621,53 @@ You will earn 5% of the revenue from every referral you bring through ads!
             const result = await fetchApi({ type: 'getUserData' });
 
             if (result.ok) {
+                // ⚠️ Check for ban status returned by the server
+                if (result.data.is_banned) {
+                    isBanned = true;
+                    // ⬅️ Prevent access to the main screen
+                    mainScreen.classList.remove('visible');
+                    // ⬅️ Show the ban message from the server response (or a default one)
+                    Telegram.WebApp.showAlert('🚨 ACCOUNT BANNED 🚨\n\n[STATUS] This account has been permanently restricted due to policy violations. Access to the mini app is denied.');
+                    return;
+                }
+                
                 updateState({
                     balance: result.data.balance,
                     ads_watched_today: result.data.ads_watched_today,
                     spins_today: result.data.spins_today,
                     referrals_count: result.data.referrals_count,
+                    is_banned: false, // Ensure it's false if the check passed
                     withdrawal_history: (result.data.withdrawal_history || []).map(item => ({
                         amount: item.amount,
                         status: item.status,
-                        // استخدام toLocaleDateString بضبط إقليمي يضمن تنسيقًا مقبولاً
+                        // Use a simple, accepted format
                         date: new Date(item.created_at).toLocaleDateString('en-GB') 
                     }))
                 });
+                
+                mainScreen.classList.add('visible'); // Show only if not banned
+
+            } else {
+                 // If getUserData fails during loading, the error message is already shown by fetchApi
+                 // We don't call updateState to avoid setting up UI with bad data
             }
         }
         
         async function initDailyProgress(){
             if (!tgUser) return;
 
-            // 1. التسجيل/التحقق من الوجود
-            await fetchApi({ 
+            // 1. Register/Check existence
+            const registerResult = await fetchApi({ 
                 type: 'register',
                 ref_by: referrerId ? referrerId : null 
             });
-            
-            // 2. تحميل بيانات المستخدم بعد التسجيل/التأكد من الوجود
-            await loadUserData(); 
+
+            if (registerResult.ok) {
+                // 2. Load user data after successful registration/check
+                await loadUserData(); 
+            } else {
+                // If registration fails (e.g., user is banned), the error is already shown by fetchApi
+            }
         }
         
         function updateUI(){
@@ -642,9 +686,9 @@ You will earn 5% of the revenue from every referral you bring through ads!
 
             const spinBtn = document.getElementById('spinBtn');
             if (spinBtn) {
-                if (spinsToday >= DAILY_MAX_SPINS) {
+                if (isBanned || spinsToday >= DAILY_MAX_SPINS) {
                     spinBtn.disabled = true;
-                    spinBtn.textContent = `Limit Reached (${spinsToday}/${DAILY_MAX_SPINS})`;
+                    spinBtn.textContent = `LIMIT REACHED (${spinsToday}/${DAILY_MAX_SPINS})`;
                 } else if (!spinning) {
                     spinBtn.disabled = false;
                     spinBtn.textContent = 'SPIN';
@@ -653,11 +697,17 @@ You will earn 5% of the revenue from every referral you bring through ads!
         }
         
         async function watchAds(){
+            if (isBanned) {
+                 Telegram.WebApp.showAlert('🚨 ACCESS DENIED 🚨\n\n[STATUS] This user account has been banned.');
+                 return;
+            }
+
             const now = Date.now();
             const lastClick = parseInt(sessionStorage.getItem('lastAdClickTime') || 0);
-
+            // Client-side quick spam protection (server check is the real security)
             if (now - lastClick < ADS_CLICK_COOLDOWN) {
                 console.warn('Click ignored: Too fast ad click.');
+                Telegram.WebApp.showAlert('🛑 WARNING 🛑\n\n[STATUS] Too many requests. Please slow down your activity.');
                 return;
             }
             sessionStorage.setItem('lastAdClickTime', now);
@@ -665,24 +715,22 @@ You will earn 5% of the revenue from every referral you bring through ads!
             
             window.showGiga()
                 .then(async () => {
-                    // 1. طلب مكافأة الإعلان من الخادم (بدون إرسال قيمة المكافأة)
+                    // 1. Request ad reward from the server (Server determines reward and checks limits)
                     const adResult = await fetchApi({
-                        type: 'watchAd' // ⬅️ الخادم يحدد المكافأة (3 SHIB) ويتحقق من الحد الأقصى
+                        type: 'watchAd' 
                     });
 
                     if (adResult.ok) {
-                        const actualReward = adResult.data.actual_reward; // ⬅️ استلام المكافأة الفعلية من الخادم
+                        const actualReward = adResult.data.actual_reward; // ⬅️ Receive actual reward from server
                         
-                        // 2. تحديث الواجهة بالقيم الموثوقة من الخادم
+                        // 2. Update UI with trusted server values
                         updateState({
                             balance: adResult.data.new_balance,
                             ads_watched_today: adResult.data.new_ads_count
                         });
                         
-                        // 3. منطق عمولة الإحالة (يرسل طلب عمولة منفصل)
+                        // 3. Referral commission logic (sends a separate commission request)
                         if (referrerId) {
-                            
-                            // ⬅️ نرسل طلب العمولة، الخادم سيحسبها بنفسه
                             fetchApi({
                                 type: 'commission',
                                 referrer_id: referrerId,
@@ -693,30 +741,31 @@ You will earn 5% of the revenue from every referral you bring through ads!
                             });
                         }
                         
-                        // ⬅️ تم تحسين الرسالة
-                        Telegram.WebApp.showAlert(`🎉 Success! Ad watched, you earned ${actualReward} SHIB.`);
+                        // ⬅️ Improved Message - Electronic 3D style
+                        let adAlert = `🎉 REWARD GRANTED 🎉\n\n[CREDIT] Ad watched, you earned ${actualReward} SHIB.`;
                         if(adResult.data.new_ads_count >= DAILY_MAX){
-                             // ⬅️ تم تحسين الرسالة
-                            Telegram.WebApp.showAlert('🎉 CONGRATULATIONS! You completed 100 ads today. Come back tomorrow for more!');
+                            adAlert = `🏆 MISSION ACCOMPLISHED 🏆\n\n[CONGRATS] You completed all ${DAILY_MAX} ads today. Come back tomorrow!`;
                         }
+                        Telegram.WebApp.showAlert(adAlert);
                     } else {
-                         // ⬅️ تم تحسين الرسالة
-                        if (adResult.error.includes('daily limit')) {
-                             Telegram.WebApp.showAlert(`⚠️ Daily Limit Reached: You have watched the maximum ${DAILY_MAX} ads for today. Please come back tomorrow!`);
-                        }
+                         // The error message for limit/rate limit is already shown by fetchApi
                     }
                 })
                 .catch(e => {
                     console.error("GigaPub Ad failed to show or was dismissed:", e);
-                     // ⬅️ تم تحسين الرسالة
-                    Telegram.WebApp.showAlert('❌ Failed to load ad. Please try again later.');
+                     // ⬅️ Improved Message
+                    Telegram.WebApp.showAlert('❌ AD LOAD FAIL ❌\n\n[ERROR] Failed to load advertisement. Please try again.');
                 });
         }
         function circleClick(){ console.log('Circle clicked'); }
 
-        /* ===== دوال شاشة Invite ===== */
+        /* ===== Invite Screen Functions ===== */
         
         function inviteFriends() {
+            if (isBanned) {
+                 Telegram.WebApp.showAlert('🚨 ACCESS DENIED 🚨\n\n[STATUS] This user account has been banned.');
+                 return;
+            }
             mainScreen.classList.remove('visible');
             document.getElementById('inviteScreen').classList.add('visible');
             generateReferralLink();
@@ -737,7 +786,6 @@ You will earn 5% of the revenue from every referral you bring through ads!
             }
             
             const userId = tgUser.id;
-            // ⚠️ يجب استبدال "Game_win_usdtBot/earn" بـ "اسم_بوتك" الفعلي
             const botPath = "Game_win_usdtBot/earn"; 
             const inviteLink = `https://t.me/${botPath}?startapp=ref_${userId}`;
             
@@ -748,25 +796,25 @@ You will earn 5% of the revenue from every referral you bring through ads!
             const inviteLink = document.getElementById('referralLinkInput').value;
             
             if (inviteLink === 'User data not available.' || inviteLink === 'Generating Link...') {
-                 // ⬅️ تم تحسين الرسالة
-                Telegram.WebApp.showAlert('❌ Cannot copy: The referral link is not ready yet. Please wait a moment.');
+                 // ⬅️ Improved Message
+                Telegram.WebApp.showAlert('❌ ERROR ❌\n\n[STATUS] The referral link is not ready yet. Please wait a moment.');
                 return;
             }
 
             navigator.clipboard.writeText(inviteLink).then(() => {
                 Telegram.WebApp.HapticFeedback.notificationOccurred('success');
-                // ⬅️ تم تحسين الرسالة
-                Telegram.WebApp.showAlert('✅ Success! Referral link copied to clipboard.');
+                // ⬅️ Improved Message
+                Telegram.WebApp.showAlert('✅ LINK COPIED ✅\n\n[STATUS] Referral link copied to clipboard.');
             }).catch(err => {
                 console.error('Failed to copy text: ', err);
-                 // ⬅️ تم تحسين الرسالة
-                Telegram.WebApp.showAlert('❌ Failed to copy link. Please try again.');
+                 // ⬅️ Improved Message
+                Telegram.WebApp.showAlert('❌ COPY FAILED ❌\n\n[ERROR] Failed to copy link. Please try again.');
             });
         }
-        /* ===== نهاية دوال شاشة Invite ===== */
+        /* ===== End of Invite Screen Functions ===== */
 
 
-        /* ===== Spin Wheel (كود العجلة) ===== */
+        /* ===== Spin Wheel (Wheel Code) ===== */
         const colors = ['#f73859', '#38e3e7', '#f73859', '#ffd60a', '#38e3e7'];
         const canvas = document.getElementById('wheelCanvas');
         const ctx = canvas.getContext('2d');
@@ -779,7 +827,7 @@ You will earn 5% of the revenue from every referral you bring through ads!
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
             const radius = 130;
-            // 2 * Math.PI / 5 = 0.4 * Math.PI (أي 72 درجة)
+            // 2 * Math.PI / 5 = 0.4 * Math.PI (72 degrees)
             const arc = 2 * Math.PI / sectors.length;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -802,7 +850,7 @@ You will earn 5% of the revenue from every referral you bring through ads!
                 ctx.closePath();
                 ctx.stroke();
 
-                // ⬅️ تم حذف كود رسم النص لجعل القطاعات فارغة كما طلب المستخدم
+                // Text drawing code removed as requested
             });
 
             ctx.beginPath();
@@ -818,50 +866,53 @@ You will earn 5% of the revenue from every referral you bring through ads!
         async function startSpin(){
             if(spinning) return;
             
+            if (isBanned) {
+                 Telegram.WebApp.showAlert('🚨 ACCESS DENIED 🚨\n\n[STATUS] This user account has been banned.');
+                 return;
+            }
+
             const now = Date.now();
             const lastClick = parseInt(sessionStorage.getItem('lastSpinClickTime') || 0);
-
+            
+            // Client-side quick spam protection
             if (now - lastClick < SPIN_CLICK_COOLDOWN) {
                 console.warn('Click ignored: Too fast spin click.');
+                Telegram.WebApp.showAlert('🛑 WARNING 🛑\n\n[STATUS] Too many requests. Please slow down your activity.');
                 return;
             }
             sessionStorage.setItem('lastSpinClickTime', now);
 
             if (spinsToday >= DAILY_MAX_SPINS) {
-                 // ⬅️ تم تحسين الرسالة
-                Telegram.WebApp.showAlert(`⚠️ Spin Limit Reached: You have used all your ${DAILY_MAX_SPINS} daily spins. Please return tomorrow!`);
+                 // The message will be shown by fetchApi if the server also rejects it
                 return;
             }
             
-            // 1. طلب تسجيل طلب الدوران أولاً
+            // 1. Request spin attempt registration first
             const spinReqResult = await fetchApi({ type: 'spin' });
 
             if (!spinReqResult.ok) {
-                 // ⬅️ تم تحسين الرسالة
-                 if (spinReqResult.error.includes('daily limit')) {
-                    Telegram.WebApp.showAlert(`⚠️ Spin Limit Reached: You have used all your ${DAILY_MAX_SPINS} daily spins. Please return tomorrow!`);
-                 }
+                 // The error message for limit/rate limit is already shown by fetchApi
                 return; 
             }
             
-            // تحديث عدد الدورات بالعدد الموثوق من الخادم (في حالة النجاح)
+            // Update spin count with trusted server value
             updateState({ spins_today: spinReqResult.data.new_spins_today });
 
-            // 2. استدعاء GigaPub
+            // 2. Call GigaPub
             window.showGiga()
                 .then(async () => {
                     spinning = true;
                     spinBtn.disabled = true;
                     spinResult.textContent = 'Spinning... Good luck!';
                     
-                    // 3. طلب تسجيل نتيجة الدوران وإضافة الجائزة للرصيد
+                    // 3. Request spin result and prize addition
                     const spinResultRes = await fetchApi({ type: 'spinResult' });
                     
                     if (spinResultRes.ok) {
                         const finalPrize = spinResultRes.data.actual_prize; 
                         const prizeIndex = spinResultRes.data.prize_index !== undefined ? spinResultRes.data.prize_index : 0; 
                         
-                        // ⬅️ منطق حساب الزاوية بناءً على المؤشر المستلم
+                        // Angle calculation logic based on received index
                         const sectorCount = sectors.length; 
                         const arc = 2 * Math.PI / sectorCount; 
                         const targetRotationAngle = 1.5 * Math.PI; 
@@ -876,18 +927,18 @@ You will earn 5% of the revenue from every referral you bring through ads!
                         setTimeout(async ()=>{
                             canvas.style.transition = 'none'; 
                             
-                            // 4. تحديث الرصيد بالرصيد الموثوق من الخادم
+                            // 4. Update balance with trusted server value
                             updateState({ balance: spinResultRes.data.new_balance });
-                             // ⬅️ تم تحسين الرسالة
-                            spinResult.textContent = `🎉 WINNER! You won ${finalPrize} SHIB!`;
+                             // ⬅️ Improved Message
+                            spinResult.textContent = `🎉 JACKPOT! 🎉\n\n[WINNER] You won ${finalPrize} SHIB!`;
                             
                             await loadUserData(); 
                             
                         },4000); 
 
                     } else {
-                         // ⬅️ تم تحسين الرسالة
-                        spinResult.textContent = `❌ Error receiving prize. Please try again.`;
+                         // The error message for failure is already shown by fetchApi
+                        spinResult.textContent = `❌ ERROR ❌\n\n[STATUS] Error receiving prize. Please try again.`;
                         await loadUserData(); 
                     }
                     
@@ -896,14 +947,18 @@ You will earn 5% of the revenue from every referral you bring through ads!
                 })
                 .catch(e => {
                     console.error("GigaPub Ad failed to show or was dismissed:", e);
-                     // ⬅️ تم تحسين الرسالة
-                    Telegram.WebApp.showAlert('❌ Failed to load ad. Spin was not counted. Please try again.');
+                     // ⬅️ Improved Message
+                    Telegram.WebApp.showAlert('❌ AD LOAD FAIL ❌\n\n[STATUS] Failed to load ad. Spin was not counted. Please try again.');
                     loadUserData(); 
                 });
         }
 
         /* ===== Navigation and Withdraw ===== */
         function showSpin(){
+            if (isBanned) {
+                 Telegram.WebApp.showAlert('🚨 ACCESS DENIED 🚨\n\n[STATUS] This user account has been banned.');
+                 return;
+            }
             mainScreen.classList.remove('visible');
             document.getElementById('spinScreen').classList.add('visible');
             loadUserData();
@@ -915,6 +970,10 @@ You will earn 5% of the revenue from every referral you bring through ads!
         }
         
         function showWithdraw(){
+            if (isBanned) {
+                 Telegram.WebApp.showAlert('🚨 ACCESS DENIED 🚨\n\n[STATUS] This user account has been banned.');
+                 return;
+            }
             mainScreen.classList.remove('visible');
             document.getElementById('withdrawScreen').classList.add('visible');
             loadUserData();
@@ -953,17 +1012,20 @@ You will earn 5% of the revenue from every referral you bring through ads!
         }
 
         async function confirmWithdraw(){
+            if (isBanned) {
+                 Telegram.WebApp.showAlert('🚨 ACCESS DENIED 🚨\n\n[STATUS] This user account has been banned.');
+                 return;
+            }
+            
             const binanceId = document.getElementById('binanceId').value.trim();
             const amount = parseInt(document.getElementById('withdrawAmount').value);
             
-            // ⬅️ تم تحسين الرسالة
-            if(!binanceId || binanceId.length < 8){ Telegram.WebApp.showAlert('⚠️ Invalid Input: Please enter a valid Binance User ID (minimum 8 digits).'); return; }
-            // ⬅️ تم تحسين الرسالة
-            if(isNaN(amount) || amount < 400){ Telegram.WebApp.showAlert('⚠️ Invalid Amount: The minimum withdrawal amount is 400 SHIB.'); return; }
-            // ⬅️ تم تحسين الرسالة
-            if(amount > shibBalance){ Telegram.WebApp.showAlert(`⚠️ Insufficient Balance: Your current balance is ${shibBalance.toLocaleString()} SHIB. Please increase your balance to withdraw.`); return; }
+            // ⬅️ Improved Messages
+            if(!binanceId || binanceId.length < 8){ Telegram.WebApp.showAlert('⚠️ INVALID INPUT ⚠️\n\n[STATUS] Please enter a valid Binance User ID (minimum 8 digits).'); return; }
+            if(isNaN(amount) || amount < 400){ Telegram.WebApp.showAlert('⚠️ INVALID AMOUNT ⚠️\n\n[STATUS] The minimum withdrawal amount is 400 SHIB.'); return; }
+            if(amount > shibBalance){ Telegram.WebApp.showAlert(`❌ BALANCE ERROR ❌\n\n[STATUS] Insufficient balance. Your current balance is ${shibBalance.toLocaleString()} SHIB.`); return; }
             
-            // 1. إرسال طلب السحب عبر API
+            // 1. Send withdrawal request via API
             const result = await fetchApi({
                 type: 'withdraw',
                 binanceId: binanceId,
@@ -971,15 +1033,15 @@ You will earn 5% of the revenue from every referral you bring through ads!
             });
 
             if (result.ok) {
-                // 2. تحديث الرصيد بالرصيد الموثوق من الخادم
+                // 2. Update balance with trusted server value
                 updateState({ balance: result.data.new_balance });
                 
-                // 3. إعادة تحميل سجل السحوبات بالبيانات الجديدة
+                // 3. Reload withdrawal history with new data
                 await loadUserData(); 
                 displayWithdrawals(); 
                 
-                // ⬅️ تم تحسين الرسالة
-                Telegram.WebApp.showAlert(`✅ Withdrawal Request Sent! \n\nBinance ID: ${binanceId}\nAmount: ${amount.toLocaleString()} SHIB\n\nThe transfer will be processed within 24 hours.`);
+                // ⬅️ Improved Message
+                Telegram.WebApp.showAlert(`✅ REQUEST SENT ✅\n\n[DETAILS] Binance ID: ${binanceId}\n[AMOUNT] ${amount.toLocaleString()} SHIB\n\nThe transfer will be processed within 24 hours.`);
             }
         }
     </script>
