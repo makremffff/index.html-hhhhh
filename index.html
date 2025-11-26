@@ -10,7 +10,8 @@
         @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap'); 
 
         *{margin:0;padding:0;box-sizing:border-box}
-        body{font-family:'Vazirmatn', Arial, Helvetica, sans-serif;overflow:hidden;background:#fff}
+        /* 🛠️ الإصلاح: تم تغيير الخلفية الافتراضية للجسم لتقليل الفلاش الأبيض عند التحميل */
+        body{font-family:'Vazirmatn', Arial, Helvetica, sans-serif;overflow:hidden;background: #0d0c1d;}
         
         /* ⚠️ NEW: Common background for all major screens */
         .app-screen {
@@ -77,6 +78,7 @@
         /* Main Screen */
         .main-screen{
             /* Inherits opacity:0 and pointer-events:none from .app-screen */
+            background-color: #f0f0f0; /* إضافة خلفية صلبة احتياطية */
         }
         
         .main-content{flex:1;display:flex;justify-content:center;align-items:center}
@@ -138,6 +140,7 @@
         .spin-progress-container {
             border-left: 5px solid #ff8c00; 
         }
+        /* ⬅️ تحديث نص الإعلانات المتبقية */
         .daily-progress-text, .spin-progress-text {font-size:14px;color:#333;margin-bottom:4px; font-weight: bold;}
         .daily-progress-bar, .spin-progress-bar {width:100%;height:12px;background:rgba(0,0,0,.1);border-radius:10px;overflow:hidden;margin-top:6px}
         .daily-progress-fill {height:100%;background:linear-gradient(90deg,#00f2fe,#4facfe);border-radius:10px;width:0%;transition:width .4s ease}
@@ -478,10 +481,9 @@ You will earn 5% of the revenue from every referral you bring through ads!
             currentProgress += increment;
             if(currentProgress>=100){
                 currentProgress=100; clearInterval(loadingInterval);
-                setTimeout(()=>{
-                    loadingScreen.classList.add('hidden');
-                    initDailyProgress(); 
-                },500);
+                // 🛠️ الإصلاح: إزالة التأخير (500 مللي ثانية) للانتقال المباشر
+                loadingScreen.classList.add('hidden');
+                initDailyProgress(); 
             }
             progressBar.style.width = currentProgress+'%';
             percentageTxt.textContent = Math.floor(currentProgress)+'%';
@@ -550,6 +552,7 @@ You will earn 5% of the revenue from every referral you bring through ads!
                 return { ok: false, error: 'InitData missing' };
             }
 
+            // ⚠️ الإبقاء على مؤشر التقدم: ضروري لإخفاء التأخير الناتج عن طلب الشبكة
             if (typeof Telegram.WebApp.showProgress === 'function') {
                 Telegram.WebApp.showProgress();
             }
@@ -869,7 +872,18 @@ You will earn 5% of the revenue from every referral you bring through ads!
                 ctx.closePath();
                 ctx.stroke();
 
-                // Text drawing code removed as requested
+                // 🛠️ الإصلاح: إضافة علامة الاستفهام ❓ لكل قسم
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                const currentAngle = i * arc;
+                ctx.rotate(currentAngle + arc / 2); // تدوير إلى مركز القطاع
+                
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#fff'; 
+                ctx.font = 'bold 30px Vazirmatn, sans-serif'; 
+                ctx.fillText('❓', radius / 1.5, 0); 
+                
+                ctx.restore();
             });
 
             ctx.beginPath();
@@ -890,18 +904,17 @@ You will earn 5% of the revenue from every referral you bring through ads!
                  return;
             }
             
-            // ❌ REMOVED: Client-side quick spam protection
-
             if (spinsToday >= DAILY_MAX_SPINS) {
                  // The message will be shown by fetchApi if the server also rejects it
                 return;
             }
             
-            // 1. Request spin attempt registration first
+            // 1. Request spin attempt registration first (Server checks rate limit and daily limit)
+            // ❌ تم إزالة أي إشعارات انتظار أو تأخير مخصص قبل استدعاء fetchApi
             const spinReqResult = await fetchApi({ type: 'spin' });
 
             if (!spinReqResult.ok) {
-                 // The error message for limit/rate limit is already shown by fetchApi
+                 // Error shown by fetchApi (rate limit/daily limit)
                 return; 
             }
             
@@ -913,7 +926,8 @@ You will earn 5% of the revenue from every referral you bring through ads!
                 .then(async () => {
                     spinning = true;
                     spinBtn.disabled = true;
-                    spinResult.textContent = 'Spinning... Good luck!';
+                    // 🛠️ الإصلاح: تبسيط رسالة البداية
+                    spinResult.textContent = 'Spinning...'; 
                     
                     // 3. Request spin result and prize addition
                     const spinResultRes = await fetchApi({ type: 'spinResult' });
@@ -940,7 +954,7 @@ You will earn 5% of the revenue from every referral you bring through ads!
                             // 4. Update balance with trusted server value
                             updateState({ balance: spinResultRes.data.new_balance });
                              // ⬅️ Improved Message
-                            spinResult.textContent = `🎉 JACKPOT! 🎉\n\n[WINNER] You won ${finalPrize} SHIB!`;
+                            spinResult.textContent = `\n\n[WINNER] You won ${finalPrize} SHIB!`;
                             
                             await loadUserData(); 
                             
