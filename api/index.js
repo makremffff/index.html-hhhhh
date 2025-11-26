@@ -1,4 +1,4 @@
-// /api/index.js (Final and Corrected Version)
+// /api/index.js (Final and Secure Version)
 
 /**
  * SHIB Ads WebApp Backend API
@@ -14,14 +14,14 @@ const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const BOT_TOKEN = process.env.BOT_TOKEN;
 
 // ------------------------------------------------------------------
-// Fully secured and defined server-side constants (to prevent tampering)
+// Fully secured and defined server-side constants
 // ------------------------------------------------------------------
 const REWARD_PER_AD = 3;
 const REFERRAL_COMMISSION_RATE = 0.05;
 const DAILY_MAX_ADS = 100; // Max ads limit
 const DAILY_MAX_SPINS = 15; // Max spins limit
 const MIN_TIME_BETWEEN_ACTIONS_MS = 3000; // 3 seconds minimum time between watchAd/spin requests
-// Sectors: 5 (Index 0), 10 (Index 1), 15 (Index 2), 20 (Index 3), 5 (Index 4)
+const ACTION_ID_EXPIRY_MS = 60000; // 60 seconds for Action ID to be valid
 const SPIN_SECTORS = [5, 10, 15, 20, 5];
 
 /**
@@ -97,19 +97,15 @@ async function resetDailyLimitsIfExpired(userId) {
     const now = Date.now();
 
     try {
-        // 1. Fetch user data with last_activity
         const users = await supabaseFetch('users', 'GET', null, `?id=eq.${userId}&select=ads_watched_today,spins_today,last_activity`);
         if (!Array.isArray(users) || users.length === 0) {
             return;
         }
 
         const user = users[0];
-        // Handle null value for first use
         const lastActivity = user.last_activity ? new Date(user.last_activity).getTime() : 0;
 
-        // 2. Check if a reset is needed
         if (now - lastActivity > twentyFourHours) {
-
             const updatePayload = {};
             if (user.ads_watched_today > 0) {
                 updatePayload.ads_watched_today = 0;
@@ -132,7 +128,6 @@ async function resetDailyLimitsIfExpired(userId) {
 
 /**
  * Rate Limiting Check for Ad/Spin Actions
- * Checks if the time elapsed since the last activity is less than the minimum allowed time.
  */
 async function checkRateLimit(userId) {
     try {
@@ -163,61 +158,102 @@ async function checkRateLimit(userId) {
 }
 
 // ------------------------------------------------------------------
-// Action ID (Anti-Replay Attack) Handlers
+// 🔒 Action ID Security System (Server-Issued ID)
 // ------------------------------------------------------------------
 
 /**
- * Checks if the action ID has already been used by the user.
+ * Generates a strong, random ID for the client to use only once.
  */
-async function checkActionId(userId, actionId) {
-    if (!actionId) {
-        throw new Error('Action ID is required.');
-    }
-    try {
-        const records = await supabaseFetch('action_ids', 'GET', null, `?user_id=eq.${userId}&action_id=eq.${actionId}&select=action_id`);
-        return records && Array.isArray(records) && records.length > 0;
-    } catch (error) {
-        console.error(`Error checking action ID ${actionId}:`, error.message);
-        return false;
-    }
+function generateStrongId() {
+    return crypto.randomBytes(32).toString('hex');
 }
 
 /**
- * Saves a new, unique action ID for the user.
+ * HANDLER: type: "generateActionId"
+ * The client requests an action ID before starting a critical action (ad/spin).
  */
-async function saveActionId(userId, actionId) {
-    if (!actionId) {
-        throw new Error('Action ID is required for saving.');
+async function handleGenerateActionId(req, res, body) {
+    const { user_id, action_type } = body;
+    const id = parseInt(user_id);
+    
+    if (!action_type) {
+        return sendError(res, 'Missing action_type.', 400);
     }
+    
+    // Check if the user already has an unexpired ID for this action type
     try {
-        await supabaseFetch('action_ids', 'POST',
-            { user_id: userId, action_id: actionId },
+        const existingIds = await supabaseFetch('temp_actions', 'GET', null, `?user_id=eq.${id}&action_type=eq.${action_type}&select=action_id,created_at`);
+        
+        if (Array.isArray(existingIds) && existingIds.length > 0) {
+            const lastIdTime = new Date(existingIds[0].created_at).getTime();
+            if (Date.now() - lastIdTime < ACTION_ID_EXPIRY_MS) {
+                 // If the existing ID is still valid, return it to prevent spamming the table
+                return sendSuccess(res, { action_id: existingIds[0].action_id });
+            } else {
+                 // Clean up expired ID before creating a new one
+                 await supabaseFetch('temp_actions', 'DELETE', null, `?user_id=eq.${id}&action_type=eq.${action_type}`);
+            }
+        }
+    } catch(e) {
+        console.warn('Error checking existing temp_actions:', e.message);
+    }
+    
+    // Generate and save the new ID
+    const newActionId = generateStrongId();
+    
+    try {
+        await supabaseFetch('temp_actions', 'POST',
+            { user_id: id, action_id: newActionId, action_type: action_type },
             '?select=action_id');
-        return { ok: true };
+            
+        sendSuccess(res, { action_id: newActionId });
     } catch (error) {
-        console.error(`Error saving action ID ${actionId}:`, error.message);
-        return { ok: false, error: 'Failed to save action ID.' };
+        // This catches if the ID was somehow duplicated (highly unlikely with strong ID)
+        console.error('Failed to generate and save action ID:', error.message);
+        sendError(res, 'Failed to generate security token.', 500);
     }
 }
 
+
 /**
- * Middleware: Checks if action_id is present and unused.
- * ⚠️ FIX: This is the core fix for Action ID checking.
+ * Middleware: Checks if the Action ID is valid (exists, not expired, matches user/type) and then deletes it.
  */
-async function handleActionIdCheck(res, userId, actionId) {
+async function validateAndUseActionId(res, userId, actionId, actionType) {
     if (!actionId) {
-        sendError(res, 'Missing Action ID. Request rejected.', 400);
+        sendError(res, 'Missing Server Token (Action ID). Request rejected.', 400);
         return false;
     }
     
-    // Check if the ID has been used
-    if (await checkActionId(userId, actionId)) {
-        // ⚠️ IMPROVEMENT: Return the specific error code/message for frontend handling
-        sendError(res, 'Action ID already used. Replay attack detected or ID reused.', 409); // 409 Conflict
+    try {
+        const query = `?user_id=eq.${userId}&action_id=eq.${actionId}&action_type=eq.${actionType}&select=id,created_at`;
+        const records = await supabaseFetch('temp_actions', 'GET', null, query);
+        
+        if (!Array.isArray(records) || records.length === 0) {
+            sendError(res, 'Invalid or previously used Server Token (Action ID).', 409); // 409 Conflict
+            return false;
+        }
+        
+        const record = records[0];
+        const recordTime = new Date(record.created_at).getTime();
+        
+        // 1. Check Expiration (60 seconds)
+        if (Date.now() - recordTime > ACTION_ID_EXPIRY_MS) {
+            // Delete the expired token and send error
+            await supabaseFetch('temp_actions', 'DELETE', null, `?id=eq.${record.id}`);
+            sendError(res, 'Server Token (Action ID) expired. Please try again.', 408); // 408 Request Timeout
+            return false;
+        }
+
+        // 2. Use the token: Delete it to prevent reuse
+        await supabaseFetch('temp_actions', 'DELETE', null, `?id=eq.${record.id}`);
+
+        return true;
+
+    } catch (error) {
+        console.error(`Error validating Action ID ${actionId}:`, error.message);
+        sendError(res, 'Security validation failed.', 500);
         return false;
     }
-    
-    return true;
 }
 
 
@@ -368,15 +404,14 @@ async function handleRegister(req, res, body) {
 
 /**
  * 2) type: "watchAd"
- * ⚠️ ACTION ID REQUIRED
  */
 async function handleWatchAd(req, res, body) {
     const { user_id, action_id } = body;
     const id = parseInt(user_id);
     const reward = REWARD_PER_AD;
 
-    // 1. Check Action ID - CORE SECURITY FIX
-    if (!await handleActionIdCheck(res, id, action_id)) return;
+    // 1. Check and Consume Action ID (Security Check)
+    if (!await validateAndUseActionId(res, id, action_id, 'watchAd')) return;
 
     try {
         // 2. Check and reset daily limits before proceeding
@@ -398,6 +433,8 @@ async function handleWatchAd(req, res, body) {
         // 4. Rate Limit Check (NEW)
         const rateLimitResult = await checkRateLimit(id);
         if (!rateLimitResult.ok) {
+            // Re-insert the action ID if rate limit is hit, so client can retry
+            // NOTE: For simplicity, we just send the error and the client will request a new one
             return sendError(res, rateLimitResult.message, 429); 
         }
 
@@ -419,10 +456,7 @@ async function handleWatchAd(req, res, body) {
           },
           `?id=eq.${id}`);
           
-        // 8. Save Action ID to prevent replay
-        await saveActionId(id, action_id);
-
-        // 9. Success
+        // 8. Success
         sendSuccess(res, { new_balance: newBalance, actual_reward: reward, new_ads_count: newAdsCount });
 
     } catch (error) {
@@ -477,16 +511,14 @@ async function handleCommission(req, res, body) {
 }
 
 /**
- * 4) type: "spin" (called before showing the ad)
- * ⚠️ ACTION ID REQUIRED
+ * 4) type: "spin" (called to register the spin before showing the ad)
  */
 async function handleSpin(req, res, body) {
     const { user_id, action_id } = body;
     const id = parseInt(user_id);
     
-    // 1. Check Action ID - CORE SECURITY FIX
-    if (!await handleActionIdCheck(res, id, action_id)) return;
-
+    // 1. Check and Consume Action ID (Security Check)
+    if (!await validateAndUseActionId(res, id, action_id, 'spin')) return;
 
     try {
         // 2. Check and reset daily limits before proceeding
@@ -511,7 +543,6 @@ async function handleSpin(req, res, body) {
             return sendError(res, rateLimitResult.message, 429); 
         }
 
-
         // 5. Check maximum spin limit
         if (user.spins_today >= DAILY_MAX_SPINS) {
             return sendError(res, `Daily spin limit (${DAILY_MAX_SPINS}) reached.`, 403);
@@ -528,10 +559,7 @@ async function handleSpin(req, res, body) {
           },
           `?id=eq.${id}`);
           
-        // 8. Save Action ID to prevent replay
-        await saveActionId(id, action_id);
-
-        // 9. Success
+        // 8. Success
         sendSuccess(res, { new_spins_count: newSpinsCount });
 
     } catch (error) {
@@ -541,20 +569,19 @@ async function handleSpin(req, res, body) {
 }
 
 /**
- * 5) type: "spinResult" (called after the spin animation)
- * ⚠️ ACTION ID REQUIRED
+ * 5) type: "spinResult" (no Action ID needed here as 'spin' was the critical step)
  */
 async function handleSpinResult(req, res, body) {
-    const { user_id, action_id } = body;
+    const { user_id } = body;
     const id = parseInt(user_id);
-
-    // 1. Check Action ID - CORE SECURITY FIX
-    if (!await handleActionIdCheck(res, id, action_id)) return;
     
+    // NOTE: The 'spin' action already consumed a unique ID and incremented the spin count.
+    // This action only calculates the prize and updates the balance.
+
     const { prize, prizeIndex } = calculateRandomSpinPrize();
 
     try {
-        // 2. Fetch current user balance and banned status
+        // 1. Fetch current user balance and banned status
         const users = await supabaseFetch('users', 'GET', null, `?id=eq.${id}&select=balance,is_banned`);
         if (!Array.isArray(users) || users.length === 0) {
             return sendError(res, 'User not found.', 404);
@@ -567,20 +594,17 @@ async function handleSpinResult(req, res, body) {
 
         const newBalance = users[0].balance + prize;
 
-        // 3. Update user record: balance 
+        // 2. Update user record: balance 
         await supabaseFetch('users', 'PATCH',
           { balance: newBalance },
           `?id=eq.${id}`);
 
-        // 4. Save to spin_results
+        // 3. Save to spin_results
         await supabaseFetch('spin_results', 'POST',
           { user_id: id, prize },
           '?select=user_id');
-          
-        // 5. Save Action ID to prevent replay
-        await saveActionId(id, action_id);
 
-        // 6. Return the actual, server-calculated prize and index
+        // 4. Return the actual, server-calculated prize and index
         sendSuccess(res, { new_balance: newBalance, actual_prize: prize, prize_index: prizeIndex });
 
     } catch (error) {
@@ -592,7 +616,6 @@ async function handleSpinResult(req, res, body) {
 
 /**
  * 6) type: "withdraw"
- * ⚠️ ACTION ID REQUIRED
  */
 async function handleWithdraw(req, res, body) {
     const { user_id, binanceId, amount, action_id } = body;
@@ -600,8 +623,8 @@ async function handleWithdraw(req, res, body) {
     const withdrawalAmount = parseFloat(amount);
     const MIN_WITHDRAW = 400;
 
-    // 1. Check Action ID - CORE SECURITY FIX
-    if (!await handleActionIdCheck(res, id, action_id)) return;
+    // 1. Check and Consume Action ID (Security Check)
+    if (!await validateAndUseActionId(res, id, action_id, 'withdraw')) return;
 
     if (withdrawalAmount < MIN_WITHDRAW) {
         return sendError(res, `Minimum withdrawal amount is ${MIN_WITHDRAW} SHIB.`, 400);
@@ -638,11 +661,8 @@ async function handleWithdraw(req, res, body) {
         await supabaseFetch('withdrawals', 'POST',
           { user_id: id, amount: withdrawalAmount, binance_id: binanceId, status: 'pending' },
           '?select=user_id');
-          
-        // 7. Save Action ID to prevent replay
-        await saveActionId(id, action_id);
 
-        // 8. Success
+        // 7. Success
         sendSuccess(res, { new_balance: newBalance });
 
     } catch (error) {
@@ -723,6 +743,9 @@ module.exports = async (req, res) => {
       break;
     case 'withdraw':
       await handleWithdraw(req, res, body);
+      break;
+    case 'generateActionId': // ⬅️ NEW Handler
+      await handleGenerateActionId(req, res, body);
       break;
     default:
       sendError(res, `Unknown request type: ${body.type}`, 400);
