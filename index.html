@@ -21,6 +21,18 @@
             transition: opacity .5s ease-in;
             display: flex;
             flex-direction: column;
+            
+            /* 🛠️ الإصلاح: الحالة المخفية الافتراضية لجميع الشاشات */
+            opacity: 0;
+            pointer-events: none; /* يمنع استقبال النقرات */
+            z-index: 10; /* مستوى التراكم الأساسي */
+        }
+
+        /* 🟢 الإصلاح: الحالة المرئية لجميع الشاشات */
+        .app-screen.visible {
+            opacity: 1;
+            pointer-events: auto;
+            z-index: 20; /* مستوى أعلى لضمان الظهور فوق أي شاشة مخفية */
         }
 
         /* Loading Screen - Neon enhancements */
@@ -32,6 +44,7 @@
         }
         .loading-screen.hidden{opacity:0;pointer-events:none}
         .loading-content{text-align:center;color:#fff}
+        /* ... (باقي خصائص شاشة التحميل) ... */
         .progress-container{
             width:300px;height:12px;background:rgba(255,255,255,.05);
             border-radius:10px;overflow:hidden;margin:2.5rem 0;
@@ -63,10 +76,9 @@
 
         /* Main Screen */
         .main-screen{
-            /* Inherits app-screen styles */
-            opacity:0;
+            /* Inherits opacity:0 and pointer-events:none from .app-screen */
         }
-        .main-screen.visible{opacity:1}
+        
         .main-content{flex:1;display:flex;justify-content:center;align-items:center}
         
         /* User Circle */
@@ -156,9 +168,9 @@
         .spin-screen{
             /* Inherits app-screen styles */
             display:flex;flex-direction:column;align-items:center;justify-content:center;
-            opacity:0;pointer-events:none;transition:opacity .3s ease;
+            /* تم نقل opacity:0 و pointer-events:none إلى .app-screen */
+            transition:opacity .3s ease;
         }
-        .spin-screen.visible{opacity:1;pointer-events:auto}
         #wheelBox{position:relative;margin-bottom:25px}
         #wheelCanvas{
             border-radius:50%;
@@ -181,10 +193,10 @@
         .withdraw-screen{
             /* Inherits app-screen styles */
             display:flex;flex-direction:column;align-items:center;padding:20px 20px;
-            opacity:0;pointer-events:none;transition:opacity .3s ease;
+            /* تم نقل opacity:0 و pointer-events:none إلى .app-screen */
+            transition:opacity .3s ease;
             overflow-y: auto;
         }
-        .withdraw-screen.visible{opacity:1;pointer-events:auto}
         .withdraw-header{
             text-align: center;
             margin-bottom: 25px;
@@ -195,6 +207,7 @@
             border-radius: 15px;
         }
         .withdraw-title{font-size:28px;color:#4a90e2;font-weight:700; text-shadow: 0 1px 1px rgba(0,0,0,.1);}
+        /* ... (باقي خصائص شاشة السحب) ... */
         .current-balance-info{
             font-size: 16px;
             color: #555;
@@ -277,10 +290,10 @@
         .invite-screen{
             /* Inherits app-screen styles */
             display:flex;flex-direction:column;align-items:center;padding:20px 20px;
-            opacity:0;pointer-events:none;transition:opacity .3s ease;
+            /* تم نقل opacity:0 و pointer-events:none إلى .app-screen */
+            transition:opacity .3s ease;
             overflow-y: auto;
         }
-        .invite-screen.visible{opacity:1;pointer-events:auto}
         .invite-header{ 
             text-align: center;
             margin-bottom: 25px;
@@ -293,6 +306,7 @@
         .invite-title{ 
              font-size:28px;color:#4a90e2;font-weight:700; text-shadow: 0 1px 1px rgba(0,0,0,.1);
         }
+        /* ... (باقي خصائص شاشة الدعوات) ... */
         .referrals-count-info{
             font-size: 18px;
             color: #333;
