@@ -1,4 +1,4 @@
-// /api/index.js (Final and Corrected Version)
+// /api/index.js (Final and Corrected Version - Unchanged from previous step)
 
 /**
  * SHIB Ads WebApp Backend API
