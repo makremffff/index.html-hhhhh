@@ -464,7 +464,6 @@ You will earn 5% of the revenue from every referral you bring through ads!
             currentProgress += increment;
             if(currentProgress>=100){
                 currentProgress=100; clearInterval(loadingInterval);
-                // 🛠️ FIX: Removed the 500ms delay to prevent loading screen hang
                 loadingScreen.classList.add('hidden');
                 initDailyProgress(); 
             }
@@ -519,24 +518,6 @@ You will earn 5% of the revenue from every referral you bring through ads!
         const API_URL = '/api'; 
         
         // ------------------------------------------------------------------
-        // ⚠️ IMPROVED: Action ID Generation Function (More Complex)
-        // ------------------------------------------------------------------
-        function generateActionId() {
-            // Generates a base64-encoded string of 16 random bytes (128 bits)
-            const randomBytes = new Uint8Array(16);
-            window.crypto.getRandomValues(randomBytes);
-            
-            // Convert to a base36 string for a mix of numbers and letters
-            const hex = Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0')).join('');
-            const randomPart = BigInt('0x' + hex).toString(36);
-            
-            const timestampPart = Date.now().toString(36);
-            
-            // Action ID structure: TIMESTAMP(BASE36)-RANDOM_BYTES(BASE36)
-            return `${timestampPart}-${randomPart}`.toUpperCase();
-        }
-
-        // ------------------------------------------------------------------
         // **fetchApi Function** // ------------------------------------------------------------------
         async function fetchApi(payload) {
             if (!tgUser) {
@@ -581,11 +562,13 @@ You will earn 5% of the revenue from every referral you bring through ads!
                          alertMessage = `🛑 RATE LIMIT EXCEEDED 🛑\n\n[ACTION REQUIRED] ${errorMessage}`;
                     } else if (response.status === 403 && errorMessage.includes('banned')) {
                          alertMessage = `🚨 ACCESS DENIED 🚨\n\n[STATUS] This user account has been banned.`;
-                    } else if (errorMessage.includes('daily limit')) {
+                    } else if (errorMessage.includes('limit reached')) {
                          alertMessage = `⚠️ DAILY LIMIT REACHED ⚠️\n\n[STATUS] You have reached the maximum allowed actions for today.`;
-                    } else if (errorMessage.includes('Action ID already used')) {
+                    } else if (errorMessage.includes('Server Token') || response.status === 409) {
                         // ⚠️ IMPROVEMENT: Explicit message for Action ID error
-                        alertMessage = `🔒 SECURITY ERROR 🔒\n\n[STATUS] Action ID rejected: Replay attack detected or ID reused. Please try again normally.`;
+                        alertMessage = `🔒 SECURITY ERROR 🔒\n\n[STATUS] Invalid or used security token. Please try again normally.`;
+                    } else if (response.status === 408) {
+                        alertMessage = `⏳ TIMEOUT ⏳\n\n[STATUS] Security token expired. Please try again immediately.`;
                     }
                     Telegram.WebApp.showAlert(alertMessage);
                     return { ok: false, error: errorMessage };
@@ -602,6 +585,22 @@ You will earn 5% of the revenue from every referral you bring through ads!
             }
         }
 
+        // ------------------------------------------------------------------
+        // NEW: Function to request Action ID from the Server
+        // ------------------------------------------------------------------
+        async function requestActionId(actionType) {
+            const result = await fetchApi({ 
+                type: 'generateActionId', 
+                action_type: actionType 
+            });
+            
+            if (result.ok) {
+                return result.data.action_id;
+            }
+            return null;
+        }
+
+
         /* ===== Rewards, Limits, and Anti-Cheat (Limits here are for display only) ===== */
         const DAILY_MAX = 100;
         const DAILY_MAX_SPINS = 15;
@@ -613,7 +612,6 @@ You will earn 5% of the revenue from every referral you bring through ads!
         let referralsCount = 0; 
         let isBanned = false; 
         
-        // Sectors: 5, 10, 15, 20, 5
         const sectors = [5, 10, 15, 20, 5]; 
 
         function updateState(data) {
@@ -713,28 +711,29 @@ You will earn 5% of the revenue from every referral you bring through ads!
                  return;
             }
             
-            // ⚠️ NEW: Generate Action ID for this critical request
-            const actionId = generateActionId();
-            
-            
+            // 1. Request Action ID from the Server
+            const actionId = await requestActionId('watchAd');
+            if (!actionId) return; // Error message already shown by fetchApi
+
+            // 2. Show Ad
             window.showGiga()
                 .then(async () => {
-                    // 1. Request ad reward from the server (Server determines reward and checks limits)
+                    // 3. Request ad reward from the server (Server determines reward, checks limits, and validates Action ID)
                     const adResult = await fetchApi({
                         type: 'watchAd',
-                        action_id: actionId // ⬅️ Send unique ID
+                        action_id: actionId // ⬅️ Send Server-Issued ID
                     });
 
                     if (adResult.ok) {
                         const actualReward = adResult.data.actual_reward; 
                         
-                        // 2. Update UI with trusted server values
+                        // 4. Update UI with trusted server values
                         updateState({
                             balance: adResult.data.new_balance,
                             ads_watched_today: adResult.data.new_ads_count
                         });
                         
-                        // 3. Referral commission logic (sends a separate commission request)
+                        // 5. Referral commission logic (sends a separate commission request)
                         if (referrerId) {
                             fetchApi({
                                 type: 'commission',
@@ -861,7 +860,7 @@ You will earn 5% of the revenue from every referral you bring through ads!
 
                 ctx.textAlign = 'center';
                 ctx.fillStyle = '#fff'; 
-                // 🛠️ FIX: Use a clear, large font for the prize value
+                // 🛠️ FIX: Use a clear, large font for the prize value (Orbitron)
                 ctx.font = 'bold 28px Orbitron, sans-serif'; 
                 ctx.shadowColor = '#000';
                 ctx.shadowBlur = 4;
@@ -902,10 +901,12 @@ You will earn 5% of the revenue from every referral you bring through ads!
                 return;
             }
             
-            // ⚠️ NEW: Generate Action ID for the spin request (before showing the ad)
-            const spinActionId = generateActionId();
-            
-            // 1. Request spin attempt registration first (Server checks rate limit, daily limit, and records Action ID)
+            // 1. Request Action ID from the Server
+            const spinActionId = await requestActionId('spin');
+            if (!spinActionId) return; // Error message already shown by fetchApi
+
+
+            // 2. Request spin attempt registration first (Server checks rate limit, daily limit, and validates Action ID)
             const spinReqResult = await fetchApi({ 
                 type: 'spin',
                 action_id: spinActionId
@@ -919,20 +920,16 @@ You will earn 5% of the revenue from every referral you bring through ads!
             // Update spin count with trusted server value
             updateState({ spins_today: spinReqResult.data.new_spins_count });
 
-            // 2. Call GigaPub
+            // 3. Call GigaPub
             window.showGiga()
                 .then(async () => {
                     spinning = true;
                     spinBtn.disabled = true;
                     spinResult.textContent = 'Spinning...'; 
                     
-                    // ⚠️ NEW: Generate a SECOND Action ID for the spinResult (after the ad)
-                    const resultActionId = generateActionId();
-                    
-                    // 3. Request spin result and prize addition
+                    // 4. Request spin result and prize addition (No second Action ID needed here, as the 'spin' action consumed the ID)
                     const spinResultRes = await fetchApi({ 
-                        type: 'spinResult',
-                        action_id: resultActionId
+                        type: 'spinResult'
                     });
                     
                     if (spinResultRes.ok) {
@@ -956,7 +953,7 @@ You will earn 5% of the revenue from every referral you bring through ads!
                         setTimeout(async ()=>{
                             canvas.style.transition = 'none'; 
                             
-                            // 4. Update balance with trusted server value 
+                            // 5. Update balance with trusted server value 
                             updateState({ balance: spinResultRes.data.new_balance });
                             spinResult.textContent = `\n\n[WINNER] You won ${finalPrize} SHIB!`;
                             
@@ -1050,22 +1047,23 @@ You will earn 5% of the revenue from every referral you bring through ads!
             if(isNaN(amount) || amount < 400){ Telegram.WebApp.showAlert('⚠️ INVALID AMOUNT ⚠️\n\n[STATUS] The minimum withdrawal amount is 400 SHIB.'); return; }
             if(amount > shibBalance){ Telegram.WebApp.showAlert(`❌ BALANCE ERROR ❌\n\n[STATUS] Insufficient balance. Your current balance is ${shibBalance.toLocaleString()} SHIB.`); return; }
             
-            // ⚠️ NEW: Generate Action ID for the withdrawal request
-            const actionId = generateActionId();
-            
-            // 1. Send withdrawal request via API
+            // 1. Request Action ID from the Server
+            const actionId = await requestActionId('withdraw');
+            if (!actionId) return;
+
+            // 2. Send withdrawal request via API
             const result = await fetchApi({
                 type: 'withdraw',
                 binanceId: binanceId,
                 amount: amount,
-                action_id: actionId // ⬅️ Send unique ID
+                action_id: actionId // ⬅️ Send Server-Issued ID
             });
 
             if (result.ok) {
-                // 2. Update balance with trusted server value
+                // 3. Update balance with trusted server value
                 updateState({ balance: result.data.new_balance });
                 
-                // 3. Reload withdrawal history with new data
+                // 4. Reload withdrawal history with new data
                 await loadUserData(); 
                 displayWithdrawals(); 
                 
