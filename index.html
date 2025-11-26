@@ -872,12 +872,15 @@ You will earn 5% of the revenue from every referral you bring through ads!
                 ctx.closePath();
                 ctx.stroke();
 
-                // 🛠️ الإصلاح: إضافة علامة الاستفهام ❓ لكل قسم
+                // 🛠️ FIX: Correct text drawing logic to ensure '❓' is upright and centered
                 ctx.save();
                 ctx.translate(centerX, centerY);
-                const currentAngle = i * arc;
-                ctx.rotate(currentAngle + arc / 2); // تدوير إلى مركز القطاع
                 
+                // Rotation angle for the text (i * arc + half_arc + 90 degrees offset to make it upright)
+                const textAngle = i * arc + arc / 2 + Math.PI / 2;
+                
+                ctx.rotate(textAngle); // Rotate to align text in the center of the sector
+
                 ctx.textAlign = 'center';
                 ctx.fillStyle = '#fff'; 
                 ctx.font = 'bold 30px Vazirmatn, sans-serif'; 
@@ -915,6 +918,8 @@ You will earn 5% of the revenue from every referral you bring through ads!
 
             if (!spinReqResult.ok) {
                  // Error shown by fetchApi (rate limit/daily limit)
+                 // ⚠️ FIX: Reload user data on failure to correctly update the UI/button state (e.g., if limit was just reached)
+                await loadUserData(); 
                 return; 
             }
             
@@ -951,7 +956,7 @@ You will earn 5% of the revenue from every referral you bring through ads!
                         setTimeout(async ()=>{
                             canvas.style.transition = 'none'; 
                             
-                            // 4. Update balance with trusted server value
+                            // 4. Update balance with trusted server value (Correct Timing)
                             updateState({ balance: spinResultRes.data.new_balance });
                              // ⬅️ Improved Message
                             spinResult.textContent = `\n\n[WINNER] You won ${finalPrize} SHIB!`;
